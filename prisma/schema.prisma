@@ -1,0 +1,173 @@
+datasource db {
+    provider = "mysql"
+}
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "../src/generated/prisma"
+}
+
+model Accion {
+    id          Int       @id @default(autoincrement())
+    nombre      String
+    creado      DateTime  @default(now())
+    actualizado DateTime  @updatedAt
+    estatus     Boolean   @default(true)
+    modulo      Modulo    @relation(fields: [moduloId], references: [id])
+    moduloId    Int
+    operacion   Operacion @relation(fields: [operacionId], references: [id])
+    operacionId Int
+    permisos    Permiso[]
+}
+
+model Modulo {
+    id          Int      @id @default(autoincrement())
+    nombre      String
+    creado      DateTime @default(now())
+    actualizado DateTime @updatedAt
+    estatus     Boolean  @default(true)
+    acciones    Accion[]
+}
+
+model Operacion {
+    id          Int      @id @default(autoincrement())
+    nombre      String
+    creado      DateTime @default(now())
+    actualizado DateTime @updatedAt
+    estatus     Boolean  @default(true)
+    acciones    Accion[]
+}
+
+model Permiso {
+    id          Int      @id @default(autoincrement())
+    creado      DateTime @default(now())
+    actualizado DateTime @updatedAt
+    estatus     Boolean  @default(true)
+    idPerfil    Int
+    perfil      Perfil   @relation(fields: [idPerfil], references: [id])
+    idAccion    Int
+    accion      Accion   @relation(fields: [idAccion], references: [id])
+}
+
+model Perfil {
+    id          Int       @id @default(autoincrement())
+    nombre      String
+    creado      DateTime  @default(now())
+    actualizado DateTime  @updatedAt
+    estatus     Boolean   @default(true)
+    permisos    Permiso[]
+    usuarios    Usuario[]
+}
+
+model Usuario {
+    id          Int       @id @default(autoincrement())
+    nombre      String
+    apellido    String
+    correo      String
+    password    String
+    idPerfil    Int
+    perfil      Perfil    @relation(fields: [idPerfil], references: [id])
+    creado      DateTime  @default(now())
+    actualizado DateTime  @updatedAt
+    estatus     Boolean   @default(true)
+    idCliente   Int?
+    cliente     Cliente?  @relation(fields: [idCliente], references: [id])
+    idSucursal  Int?
+    sucursal    Sucursal? @relation(fields: [idSucursal], references: [id])
+}
+
+model Cliente {
+    id          Int        @id @default(autoincrement())
+    nombre      String
+    creado      DateTime   @default(now())
+    actualizado DateTime   @updatedAt
+    estatus     Boolean    @default(true)
+    usuarios    Usuario[]
+    sucursales  Sucursal[]
+}
+
+model Sucursal {
+    id          Int       @id @default(autoincrement())
+    nombre      String
+    creado      DateTime  @default(now())
+    actualizado DateTime  @updatedAt
+    estatus     Boolean   @default(true)
+    idCliente   Int
+    cliente     Cliente   @relation(fields: [idCliente], references: [id])
+    usuarios    Usuario[]
+    secciones   Seccion[]
+}
+
+model Seccion {
+    id           Int          @id @default(autoincrement())
+    nombre       String
+    creado       DateTime     @default(now())
+    actualizado  DateTime     @updatedAt
+    estatus      Boolean      @default(true)
+    idSucursal   Int
+    sucursal     Sucursal     @relation(fields: [idSucursal], references: [id])
+    congeladores Congelador[]
+    gateways     Gateway[]
+}
+
+model Congelador {
+    id           Int           @id @default(autoincrement())
+    nombre       String
+    creado       DateTime      @default(now())
+    actualizado  DateTime      @updatedAt
+    estatus      Boolean       @default(true)
+    idSeccion    Int
+    seccion      Seccion       @relation(fields: [idSeccion], references: [id])
+    dispositivos Dispositivo[]
+}
+
+model Gateway {
+    id            Int           @id @default(autoincrement())
+    identificador String
+    creado        DateTime      @default(now())
+    actualizado   DateTime      @updatedAt
+    estatus       Boolean       @default(true)
+    idSeccion     Int
+    seccion       Seccion       @relation(fields: [idSeccion], references: [id])
+    dispositivos  Dispositivo[]
+    infoEstatus   InfoEstatus[]
+}
+
+model Dispositivo {
+    id           Int           @id @default(autoincrement())
+    nombre       String
+    creado       DateTime      @default(now())
+    actualizado  DateTime      @updatedAt
+    estatus      Boolean       @default(true)
+    idGateway    Int
+    gateway      Gateway       @relation(fields: [idGateway], references: [id])
+    idCongelador Int
+    congelador   Congelador    @relation(fields: [idCongelador], references: [id])
+    data         Data[]
+    infoEstatus  InfoEstatus[]
+}
+
+model Data {
+    id            Int         @id @default(autoincrement())
+    temperatura   Float
+    ambiente      Float
+    creado        DateTime    @default(now())
+    actualizado   DateTime    @updatedAt
+    estatus       Boolean     @default(true)
+    idDispositivo Int
+    dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+}
+
+model InfoEstatus {
+    id            Int         @id @default(autoincrement())
+    bateria       Float
+    rssi          Int
+    snr           Int
+    creado        DateTime    @default(now())
+    actualizado   DateTime    @updatedAt
+    estatus       Boolean     @default(true)
+    idGateway     Int
+    gateway       Gateway     @relation(fields: [idGateway], references: [id])
+    idDispositivo Int
+    dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+}
