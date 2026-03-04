@@ -4,7 +4,7 @@ export const UsuarioSchema = z.object({
     nombre: z.string(),
     apellido: z.string(),
     correo: z.string().email(),
-    password: z.string().min(6),
+    password: z.string(),
     idPerfil: z.number().int(),
     idCliente: z.number().int().nullish(),
     idSucursal: z.number().int().nullish(),

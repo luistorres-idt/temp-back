@@ -8,6 +8,8 @@ export class AutenticacionMiddleware {
         // Rutas públicas (login, register)
         if (req.path.includes("/autenticacion")) return next();
 
+        if (req.path.includes("/data") && req.method == "POST") return next();
+
         const autenticador = new Autenticador();
 
         // Autenticación por token JWT

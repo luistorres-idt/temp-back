@@ -24,12 +24,12 @@ app.use(CORSMiddleware.execute());
 app.get("/healthy", (_req: Request, res: Response) => {
     res.json({
         status: "ok",
-        message: "API funcionando correctamente 🚀",
+        message: "API funcionando correctamente",
     });
 });
 
 // Middlewares de autenticación y autorización
-//app.use(AutenticacionMiddleware.execute);
+app.use(AutenticacionMiddleware.execute);
 // app.use(AutorizacionMiddleware.execute); // Descomentar cuando se configuren los permisos
 
 // Middlewares de paginación y filtros
