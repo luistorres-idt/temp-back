@@ -10,7 +10,7 @@ Bienvenido a la documentación oficial de la API. Esta documentación ha sido di
 - **Formato de datos:** JSON (`application/json`).
 - **Autenticación:** JWT (JSON Web Tokens). Se debe enviar en el header `Authorization` como `Bearer <token>`.
 
-> **Tip para el Frontend Dev:** En la carpeta `docs` tienes un archivo `openapi.yaml`. Puedes importarlo directamente en **Postman**, **Insomnia** o usarlo en **Swagger Editor** (`editor.swagger.io`) para visualizar toda la API de forma interactiva y generar código autocompletado para tu frontend (por ejemplo, con `openapi-generator` o RTK Query).
+> **Tip para el Frontend Dev:** En la carpeta `docs` tienes un archivo postman collection para importar en postman.
 
 ---
 
