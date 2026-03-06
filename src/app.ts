@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import { createServer } from "node:http";
 import morgan from "morgan";
 import { PORT } from "./config/settings.js";
 import { CORSMiddleware } from "./middlewares/cors.js";
@@ -7,9 +8,15 @@ import { AutorizacionMiddleware } from "./middlewares/autorizacion/autorizacion.
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
+import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js";
 import type { Application } from "express";
 
 const app: Application = express();
+const httpServer = createServer(app);
+
+// Socket.IO
+const io = initializeSocketServer(httpServer);
+NotificationEmitter.getInstance().initialize(io);
 
 // Seguridad
 app.disable("x-powered-by");
@@ -48,7 +55,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}\n`);
 });
 
