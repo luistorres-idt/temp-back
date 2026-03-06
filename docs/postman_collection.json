@@ -1535,7 +1535,7 @@
         },
         {
             "name": "🌡️ Data (Lecturas)",
-            "description": "CRUD de lecturas de temperatura.\n\nResponse: `{ id, temperatura, ambiente, estatus, creado, dispositivo: {id, nombre} }`",
+            "description": "Lecturas de temperatura de sensores.\n\n**GET/PATCH** funcionan como CRUD estándar.\n\n**POST** recibe un payload del gateway con múltiples sensores. Se crean registros en `Data` e `InfoEstatus` automáticamente dentro de una transacción.\n\nResponse GET: `{ id, temperatura, ambiente, estatus, creado, dispositivo: {id, nombre} }`",
             "item": [
                 {
                     "name": "Listar Lecturas",
@@ -1600,7 +1600,7 @@
                     }
                 },
                 {
-                    "name": "Crear Lectura",
+                    "name": "Registrar Lecturas (desde Gateway)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1611,7 +1611,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"temperatura\": -18.5,\n  \"ambiente\": 22.3,\n  \"idDispositivo\": 1,\n  \"estatus\": true\n}",
+                            "raw": "{\n  \"identificador\": \"GW-001\",\n  \"data\": [\n    {\n      \"identificador\": \"SENSOR-01\",\n      \"signal\": {\n        \"bateria\": 85.5,\n        \"rssi\": -70,\n        \"snr\": 10\n      },\n      \"data\": {\n        \"temperatura\": -18.5,\n        \"ambiente\": 22.3\n      }\n    },\n    {\n      \"identificador\": \"SENSOR-02\",\n      \"signal\": {\n        \"bateria\": 92.0,\n        \"rssi\": -65,\n        \"snr\": 12\n      },\n      \"data\": {\n        \"temperatura\": -20.1,\n        \"ambiente\": 21.8\n      }\n    }\n  ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1628,7 +1628,7 @@
                                 "data"
                             ]
                         },
-                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| temperatura | number | ✅ |\n| ambiente | number | ✅ |\n| idDispositivo | int | ✅ |\n| estatus | boolean | ❌ |"
+                        "description": "Registra lecturas de múltiples sensores de un gateway. Crea registros en `Data` e `InfoEstatus` en una transacción atómica.\n\n### Body\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Identificador del gateway |\n| `data` | array | ✅ | Array de sensores |\n\n### Objeto sensor (cada elemento del array `data`)\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Nombre del dispositivo/sensor |\n| `signal.bateria` | number | ✅ | Nivel de batería |\n| `signal.rssi` | int | ✅ | Intensidad de señal |\n| `signal.snr` | int | ✅ | Relación señal/ruido |\n| `data.temperatura` | number | ✅ | Temperatura de la lectura |\n| `data.ambiente` | number | ✅ | Temperatura ambiente |\n\n### Respuesta exitosa (201)\n```json\n{\n  \"mensaje\": \"El registro se ha creado exitosamente\",\n  \"data\": [\n    {\n      \"data\": { \"id\": 1, \"temperatura\": -18.5, ... },\n      \"infoEstatus\": { \"id\": 1, \"bateria\": 85.5, ... }\n    }\n  ]\n}\n```\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 400 | Datos de validación incorrectos o dispositivo no encontrado |\n| 404 | Gateway no encontrado |"
                     }
                 },
                 {
