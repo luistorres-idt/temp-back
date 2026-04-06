@@ -6,7 +6,7 @@ export class QueryMiddleware {
     const { query } = req;
     const where: Record<string, unknown> = {};
 
-    const { nombre, estatus, identificador, fecha, cliente } = query as Record<
+    const { nombre, estatus, identificador, fecha, cliente, sucursal, seccion, dispositivo, gateway } = query as Record<
       string,
       string | undefined
     >;
@@ -42,7 +42,11 @@ export class QueryMiddleware {
 
     //filtros de relaciones
     if (cliente !== undefined) where["cliente"] = cliente && { id: { equals: parseInt(cliente) } };
-
+    if (sucursal !== undefined) where["sucursal"] = sucursal && { id: { equals: parseInt(sucursal) } };
+    if (seccion !== undefined) where["seccion"] = seccion && { id: { equals: parseInt(seccion) } };
+    if (dispositivo !== undefined) where["dispositivo"] = dispositivo && { id: { equals: parseInt(dispositivo) } };
+    if (gateway !== undefined) where["gateway"] = gateway && { id: { equals: parseInt(gateway) } };
+    
     req.where = where;
     next();
   }
