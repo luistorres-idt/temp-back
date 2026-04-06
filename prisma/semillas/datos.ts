@@ -98,8 +98,8 @@ export const secciones = [
 ];
 
 export const congeladores = [
-    { id: 1, nombre: "Congelador Carnes Rojas", idSeccion: 1 },
-    { id: 2, nombre: "Vitrina Embutidos", idSeccion: 2 }
+    { id: 1, nombre: "Congelador Carnes Rojas", idSeccion: 1, temperaturaObjetivo: -20.0 },
+    { id: 2, nombre: "Vitrina Embutidos", idSeccion: 2, temperaturaObjetivo: -15.0 }
 ];
 
 export const gateways = [

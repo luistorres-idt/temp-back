@@ -12,6 +12,12 @@ export const sucursalSelect = {
     estatus: true,
     creado: true,
     cliente: { select: { id: true, nombre: true } },
+    secciones: {
+        select: {
+            id: true, nombre: true,
+            congeladores: { select: { id: true, nombre: true } }
+        }
+    },
 };
 
 export const evaluarSucursal = (data: unknown) => SucursalSchema.safeParse(data);
