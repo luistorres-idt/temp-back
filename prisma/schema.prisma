@@ -111,14 +111,15 @@ model Seccion {
 }
 
 model Congelador {
-    id           Int           @id @default(autoincrement())
-    nombre       String
-    creado       DateTime      @default(now())
-    actualizado  DateTime      @updatedAt
-    estatus      Boolean       @default(true)
-    idSeccion    Int
-    seccion      Seccion       @relation(fields: [idSeccion], references: [id])
-    dispositivos Dispositivo[]
+    id                  Int           @id @default(autoincrement())
+    nombre              String
+    temperaturaObjetivo Float         @default(-18.0)
+    creado              DateTime      @default(now())
+    actualizado         DateTime      @updatedAt
+    estatus             Boolean       @default(true)
+    idSeccion           Int
+    seccion             Seccion       @relation(fields: [idSeccion], references: [id])
+    dispositivos        Dispositivo[]
 }
 
 model Gateway {
