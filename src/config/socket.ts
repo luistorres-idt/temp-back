@@ -1,5 +1,4 @@
 import { Server, Socket } from "socket.io";
-import type { Server as HttpServer } from "http";
 import { evaluarToken } from "../utils/token.js";
 import type { UsuarioToken } from "../types/types.js";
 
@@ -17,13 +16,8 @@ export let io: Server;
  * Cada socket se autentifica via JWT en el handshake y se une
  * automaticamente a la room de su sucursal o cliente.
  */
-export const inicializarSocket = (httpServer: HttpServer): void => {
-    io = new Server(httpServer, {
-        cors: {
-            origin: "*",
-            methods: ["GET", "POST"],
-        },
-    });
+export const inicializarSocket = (servidorIo: Server): void => {
+    io = servidorIo;
 
     // Middleware de autenticacion del socket
     io.use((socket, next) => {

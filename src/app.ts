@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import http from "http";
+import { createServer } from "node:http";
 import morgan from "morgan";
 import { PORT } from "./config/settings.js";
 import { CORSMiddleware } from "./middlewares/cors.js";
@@ -9,9 +9,18 @@ import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
 import { inicializarSocket } from "./config/socket.js";
+import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js";
 import type { Application } from "express";
 
 const app: Application = express();
+const httpServer = createServer(app);
+
+// Socket.IO
+const io = initializeSocketServer(httpServer);
+NotificationEmitter.getInstance().initialize(io);
+
+// Inicializar Socket.io congeladores
+inicializarSocket(io);
 
 // Seguridad
 app.disable("x-powered-by");
@@ -48,12 +57,6 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     }
     return res.status(500).json({ error: "Ha ocurrido un error" });
 });
-
-// Crear el servidor HTTP sobre Express para poder compartirlo con Socket.io
-const httpServer = http.createServer(app);
-
-// Inicializar Socket.io antes de empezar a escuchar
-inicializarSocket(httpServer);
 
 // Iniciar servidor
 httpServer.listen(PORT, () => {
