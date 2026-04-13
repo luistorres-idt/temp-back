@@ -5,6 +5,7 @@ import { prisma } from "../config/db.js";
 import { AppRequest } from "../types/types.js";
 import { Response } from "express";
 import { MENSAJE_ERROR, MENSAJE_EXITO } from "../utils/mensajes.js";
+import { io } from "../config/socket.js";
 
 export class DataController extends BaseController {
     constructor() {
@@ -40,17 +41,44 @@ export class DataController extends BaseController {
 
             // procesar cada sensor dentro de una transaccion
             const resultados = await prisma.$transaction(async (tx) => {
-                const registros: { data: object; infoEstatus: object }[] = [];
+                interface RegistroWS {
+                    data: object;
+                    infoEstatus: object;
+                    _ws: {
+                        idCongelador: number | null;
+                        idDispositivo: number;
+                        nombreDispositivo: string;
+                        temperatura: number;
+                        ambiente: number;
+                        timestamp: string;
+                        idSucursal: number;
+                    };
+                }
+                const registros: RegistroWS[] = [];
 
                 for (const sensor of sensores) {
-                    // buscar el dispositivo por nombre (identificador del sensor) y gateway
+                    // buscar el dispositivo — incluimos congelador y su seccion para resolver el room de WS
                     const dispositivo = await tx.dispositivo.findFirst({
                         where: {
                             nombre: sensor.identificador,
                             idGateway: gateway.id,
                             estatus: true,
                         },
-                        select: { id: true },
+                        select: {
+                            id: true,
+                            nombre: true,
+                            idCongelador: true,
+                            congelador: {
+                                select: {
+                                    id: true,
+                                    seccion: {
+                                        select: {
+                                            sucursal: { select: { id: true } },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     });
 
                     if (!dispositivo) {
@@ -82,15 +110,43 @@ export class DataController extends BaseController {
                     registros.push({
                         data: dataRegistro,
                         infoEstatus: infoEstatusRegistro,
+                        // Datos de enrutamiento para el WS (no se devuelven al cliente)
+                        _ws: {
+                            idCongelador: dispositivo.idCongelador,
+                            idDispositivo: dispositivo.id,
+                            nombreDispositivo: dispositivo.nombre,
+                            temperatura: sensor.data.temperatura,
+                            ambiente: sensor.data.ambiente,
+                            timestamp: dataRegistro.creado?.toISOString() ?? new Date().toISOString(),
+                            idSucursal: dispositivo.congelador.seccion.sucursal.id,
+                        },
                     });
                 }
 
                 return registros;
             });
 
+            // Emitir evento WS por cada sensor guardado (fuera de la transaccion para no bloquearla)
+            if (io) {
+                for (const registro of resultados) {
+                    const { _ws: ws } = registro;
+                    const room = `sucursal:${ws.idSucursal}`;
+
+                    io.to(room).emit("telemetria:nueva", {
+                        idCongelador: ws.idCongelador,
+                        idDispositivo: ws.idDispositivo,
+                        nombreDispositivo: ws.nombreDispositivo,
+                        temperatura: ws.temperatura,
+                        ambiente: ws.ambiente,
+                        timestamp: ws.timestamp,
+                    });
+                    console.log("Emitiendo evento telemetria:nueva");
+                }
+            }
+
             res.status(201).json({
                 mensaje: MENSAJE_EXITO.CREACION,
-                data: resultados,
+                data: resultados.map(({ data, infoEstatus }) => ({ data, infoEstatus })),
             });
         } catch (err) {
             console.error(err);

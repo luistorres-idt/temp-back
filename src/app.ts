@@ -8,6 +8,7 @@ import { AutorizacionMiddleware } from "./middlewares/autorizacion/autorizacion.
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
+import { inicializarSocket } from "./config/socket.js";
 import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js";
 import type { Application } from "express";
 
@@ -17,6 +18,9 @@ const httpServer = createServer(app);
 // Socket.IO
 const io = initializeSocketServer(httpServer);
 NotificationEmitter.getInstance().initialize(io);
+
+// Inicializar Socket.io congeladores
+inicializarSocket(io);
 
 // Seguridad
 app.disable("x-powered-by");
@@ -36,7 +40,7 @@ app.get("/healthy", (_req: Request, res: Response) => {
 });
 
 // Middlewares de autenticación y autorización
-app.use(AutenticacionMiddleware.execute);
+//app.use(AutenticacionMiddleware.execute);
 // app.use(AutorizacionMiddleware.execute); // Descomentar cuando se configuren los permisos
 
 // Middlewares de paginación y filtros

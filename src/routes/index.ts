@@ -31,7 +31,11 @@ export class AppRouter {
         router.use("/api/clientes", crearRouterCRUD(new ClientesController()));
         router.use("/api/sucursales", crearRouterCRUD(new SucursalesController()));
         router.use("/api/secciones", crearRouterCRUD(new SeccionesController()));
-        router.use("/api/congeladores", crearRouterCRUD(new CongeladoresController()));
+
+        // Ruta especial de telemetria del congelador — debe ir antes del CRUD
+        const congeladoresController = new CongeladoresController();
+        router.get("/api/congeladores/:id/telemetria", congeladoresController.obtenerTelemetria);
+        router.use("/api/congeladores", crearRouterCRUD(congeladoresController));
         router.use("/api/gateways", crearRouterCRUD(new GatewaysController()));
         router.use("/api/dispositivos", crearRouterCRUD(new DispositivosController()));
         router.use("/api/data", crearRouterCRUD(new DataController()));

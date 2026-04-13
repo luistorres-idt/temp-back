@@ -20,7 +20,7 @@ export class AutenticacionController {
             const usuario = await UsuarioModel.obtenerPorCorreo({ correo });
 
             if (!usuario) {
-                res.status(401).json({ error: MENSAJE_ERROR.CREDENCIALES });
+                res.status(401).json({ error: `Usuario con correo '${correo}' no encontrado` });
                 return;
             }
 
