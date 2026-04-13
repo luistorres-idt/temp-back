@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import http from "http";
 import morgan from "morgan";
 import { PORT } from "./config/settings.js";
 import { CORSMiddleware } from "./middlewares/cors.js";
@@ -7,6 +8,7 @@ import { AutorizacionMiddleware } from "./middlewares/autorizacion/autorizacion.
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
+import { inicializarSocket } from "./config/socket.js";
 import type { Application } from "express";
 
 const app: Application = express();
@@ -29,7 +31,7 @@ app.get("/healthy", (_req: Request, res: Response) => {
 });
 
 // Middlewares de autenticación y autorización
-app.use(AutenticacionMiddleware.execute);
+//app.use(AutenticacionMiddleware.execute);
 // app.use(AutorizacionMiddleware.execute); // Descomentar cuando se configuren los permisos
 
 // Middlewares de paginación y filtros
@@ -47,8 +49,14 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     return res.status(500).json({ error: "Ha ocurrido un error" });
 });
 
+// Crear el servidor HTTP sobre Express para poder compartirlo con Socket.io
+const httpServer = http.createServer(app);
+
+// Inicializar Socket.io antes de empezar a escuchar
+inicializarSocket(httpServer);
+
 // Iniciar servidor
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}\n`);
 });
 
