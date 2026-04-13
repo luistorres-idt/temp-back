@@ -63,7 +63,7 @@ model Usuario {
     id          Int       @id @default(autoincrement())
     nombre      String
     apellido    String
-    correo      String
+    correo      String    @unique
     password    String
     idPerfil    Int
     perfil      Perfil    @relation(fields: [idPerfil], references: [id])
