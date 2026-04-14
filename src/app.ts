@@ -39,9 +39,7 @@ app.get("/healthy", (_req: Request, res: Response) => {
     });
 });
 
-// Middlewares de autenticación y autorización
-//app.use(AutenticacionMiddleware.execute);
-// app.use(AutorizacionMiddleware.execute); // Descomentar cuando se configuren los permisos
+// Autenticación: aplicada en AppRouter, que distingue rutas públicas y protegidas
 
 // Middlewares de paginación y filtros
 app.use(PaginacionMiddleware.execute);
