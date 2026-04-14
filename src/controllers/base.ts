@@ -64,7 +64,10 @@ export class BaseController {
         const id = req.params.id as string;
 
         try {
-            const elemento = await this.model.obtenerElemento({ id: parseInt(id) });
+            const elemento = await this.model.obtenerElemento({
+                id: parseInt(id),
+                where: req.where as PrismaWhereInput,
+            });
             res.json({ mensaje: MENSAJE_EXITO.LISTADO_UNO, data: elemento });
         } catch (err) {
             console.error(err);
@@ -85,6 +88,7 @@ export class BaseController {
             const elemento = await this.model.editarElemento({
                 id: parseInt(id),
                 data: result.data as Record<string, unknown>,
+                where: req.where as PrismaWhereInput,
             });
             res.json({ mensaje: MENSAJE_EXITO.EDICION, data: elemento });
         } catch (err) {
@@ -92,4 +96,21 @@ export class BaseController {
             res.status(400).json({ error: MENSAJE_ERROR.EDICION });
         }
     };
+
+    /**
+     * Inyecta idCliente e idSucursal desde el JWT del usuario autenticado,
+     * sobrescribiendo cualquier valor enviado por el cliente en el body.
+     * Llamar antes de persistir en subclases que manejan recursos con dueño.
+     */
+    protected inyectarTenant(req: AppRequest, data: Record<string, unknown>): void {
+        const { usuario } = req;
+        if (!usuario) return;
+
+        if (usuario.cliente?.id !== undefined) {
+            data["idCliente"] = usuario.cliente.id;
+        }
+        if (usuario.sucursal?.id !== undefined) {
+            data["idSucursal"] = usuario.sucursal.id;
+        }
+    }
 }
