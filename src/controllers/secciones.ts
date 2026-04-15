@@ -86,13 +86,37 @@ export class SeccionesController extends BaseController {
         const id = req.params.id as string;
 
         try {
-            const elemento = await this.model.obtenerElemento({ id: parseInt(id) }) as SeccionResponse;
+            const elemento = await this.model.obtenerElemento({
+                id: parseInt(id),
+                where: req.where as PrismaWhereInput,
+            }) as SeccionResponse;
             const dataConPromedios = this.inyectarPromedios(elemento);
-            
+
             res.json({ mensaje: MENSAJE_EXITO.LISTADO_UNO, data: dataConPromedios });
         } catch (err) {
             console.error(err);
             res.status(404).json({ error: MENSAJE_ERROR.LISTADO_UNO });
+        }
+    };
+
+    // Override: fuerza idSucursal del JWT al crear
+    crearElemento = async (req: AppRequest, res: Response): Promise<void> => {
+        const result = this.evaluarCreacion(req.body);
+
+        if (!result.success) {
+            res.status(400).json({ error: MENSAJE_ERROR.VALIDACION_DATOS });
+            return;
+        }
+
+        try {
+            const data = result.data as Record<string, unknown>;
+            this.inyectarTenant(req, data);
+
+            const elemento = await this.model.crearElemento({ data });
+            res.status(201).json({ mensaje: MENSAJE_EXITO.CREACION, data: elemento });
+        } catch (err) {
+            console.error(err);
+            res.status(400).json({ error: MENSAJE_ERROR.CREACION });
         }
     };
 }

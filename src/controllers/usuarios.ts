@@ -57,6 +57,7 @@ export class UsuariosController extends BaseController {
             const elemento = await this.model.editarElemento({
                 id: parseInt(id),
                 data,
+                where: req.where as Record<string, unknown>,
             });
             res.json({ mensaje: MENSAJE_EXITO.EDICION, data: elemento });
         } catch (err) {

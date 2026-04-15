@@ -56,15 +56,24 @@ export class BaseRepository<TResponse, TInput, TInputParcial = Partial<TInput>> 
         return elemento as TResponse;
     }
 
-    async obtenerElemento({ id }: { id: number }): Promise<TResponse> {
+    async obtenerElemento({ id, where }: { id: number; where?: PrismaWhereInput }): Promise<TResponse> {
+        // Combina el id con el scoping del usuario como AND implícito de Prisma.
+        // Esto previene IDOR: si el recurso no le pertenece al usuario, findFirstOrThrow lanza.
         const elemento = await this.delegate.findFirstOrThrow({
-            where: { id, estatus: true },
+            where: { id, estatus: true, ...where },
             select: this.selectSchema,
         });
         return elemento as TResponse;
     }
 
-    async editarElemento({ id, data }: { id: number; data: TInputParcial }): Promise<TResponse> {
+    async editarElemento({ id, data, where }: { id: number; data: TInputParcial; where?: PrismaWhereInput }): Promise<TResponse> {
+        // Verificar que el recurso pertenece al tenant antes de actualizar.
+        // findFirstOrThrow lanza si no existe o no pasa el filtro de scoping.
+        await this.delegate.findFirstOrThrow({
+            where: { id, estatus: true, ...where },
+            select: { id: true },
+        });
+
         const elemento = await this.delegate.update({
             where: { id },
             data,
