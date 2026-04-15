@@ -14,26 +14,21 @@ export class QueryMiddleware {
 
     // Estatus: por defecto true salvo que venga explícitamente false
     const VALORES_FALSOS = ["false", "0"];
-    where["estatus"] =
-      estatus !== undefined ? !VALORES_FALSOS.includes(estatus) : true;
+    where["estatus"] = estatus !== undefined ? !VALORES_FALSOS.includes(estatus) : true;
 
-    // Filtros de texto con contains
-    if (nombre !== undefined)
-      where["nombre"] = nombre ? { contains: nombre } : undefined;
-    if (identificador !== undefined)
-      where["identificador"] = identificador
-        ? { contains: identificador }
-        : undefined;
+    // Filtros de texto con contains (se excluyen strings vacíos)
+    if (nombre) {
+        where["nombre"] = { contains: nombre };
+    }
+    if (identificador) {
+        where["identificador"] = { contains: identificador };
+    }
 
     // Filtro de fecha
     if (fecha) {
       const [year, month, day] = fecha.split("-").map(Number);
-      const limiteInferior = new Date(
-        Date.UTC(year, month - 1, day, 0, 0, 0, 0),
-      );
-      const limiteSuperior = new Date(
-        Date.UTC(year, month - 1, day, 23, 59, 59, 999),
-      );
+      const limiteInferior = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      const limiteSuperior = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
       where["creado"] = {
         gte: limiteInferior.toISOString(),
@@ -41,12 +36,16 @@ export class QueryMiddleware {
       };
     }
 
-    //filtros de relaciones
-    if (cliente !== undefined) where["cliente"] = cliente && { id: { equals: parseInt(cliente) } };
-    if (sucursal !== undefined) where["sucursal"] = sucursal && { id: { equals: parseInt(sucursal) } };
-    if (seccion !== undefined) where["seccion"] = seccion && { id: { equals: parseInt(seccion) } };
-    if (dispositivo !== undefined) where["dispositivo"] = dispositivo && { id: { equals: parseInt(dispositivo) } };
-    if (gateway !== undefined) where["gateway"] = gateway && { id: { equals: parseInt(gateway) } };
+    // Filtros de relaciones (procesados de forma limpia iterando las llaves validas)
+    const relaciones = { cliente, sucursal, seccion, dispositivo, gateway };
+    for (const [clave, valor] of Object.entries(relaciones)) {
+        if (valor) {
+            const idNumber = parseInt(valor, 10);
+            if (!isNaN(idNumber)) {
+                where[clave] = { id: { equals: idNumber } };
+            }
+        }
+    }
 
     req.where = where;
     next();
