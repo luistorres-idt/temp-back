@@ -42,8 +42,28 @@ export class CongeladoresControllerV2 {
             return;
         }
 
+        let fechaInicio: Date | undefined;
+        let fechaFin: Date | undefined;
+
+        if (modo === "historico") {
+            if (req.query.fechaInicio) {
+                fechaInicio = new Date(req.query.fechaInicio as string);
+                if (isNaN(fechaInicio.getTime())) {
+                    res.status(400).json({ error: "fechaInicio invalida" });
+                    return;
+                }
+            }
+            if (req.query.fechaFin) {
+                fechaFin = new Date(req.query.fechaFin as string);
+                if (isNaN(fechaFin.getTime())) {
+                    res.status(400).json({ error: "fechaFin invalida" });
+                    return;
+                }
+            }
+        }
+
         try {
-            const telemetria = await this.obtenerTelemetriaUC.execute({ id, modo });
+            const telemetria = await this.obtenerTelemetriaUC.execute({ id, modo, fechaInicio, fechaFin });
             res.json(telemetria);
         } catch (err) {
             if (DomainError.isDomainError(err)) {

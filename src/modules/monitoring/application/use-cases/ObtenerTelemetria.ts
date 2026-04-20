@@ -7,6 +7,8 @@ import type { ICongeladorRepository, ModoTelemetria, DatosTelemetria } from "../
 export interface ObtenerTelemetriaDto {
     id: number;
     modo: ModoTelemetria;
+    fechaInicio?: Date;
+    fechaFin?: Date;
 }
 
 /**
@@ -21,6 +23,6 @@ export class ObtenerTelemetria implements UseCase<ObtenerTelemetriaDto, DatosTel
     ) { }
 
     async execute(request: ObtenerTelemetriaDto): Promise<DatosTelemetria> {
-        return this.congeladorRepository.obtenerTelemetria(request.id, request.modo);
+        return this.congeladorRepository.obtenerTelemetria(request.id, request.modo, request.fechaInicio, request.fechaFin);
     }
 }

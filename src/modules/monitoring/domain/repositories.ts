@@ -122,11 +122,11 @@ export interface DatosTelemetria {
 export interface ICongeladorRepository {
     /**
      * Obtiene la telemetria de un congelador: sus dispositivos con lecturas
-     * segun el modo (vivo = ultima lectura, historico = ultimas 24h).
+     * segun el modo (vivo = ultima lectura, historico = ultimas 24h o rango).
      *
      * @throws EntityNotFoundError si el congelador no existe.
      */
-    obtenerTelemetria(id: number, modo: ModoTelemetria): Promise<DatosTelemetria>;
+    obtenerTelemetria(id: number, modo: ModoTelemetria, fechaInicio?: Date, fechaFin?: Date): Promise<DatosTelemetria>;
 }
 
 /**
