@@ -20,7 +20,7 @@ const MS_24H = 24 * 60 * 60 * 1000;
  * patron de puertos/adaptadores.
  */
 export class PrismaCongeladorRepository implements ICongeladorRepository {
-    async obtenerTelemetria(id: number, modo: ModoTelemetria): Promise<DatosTelemetria> {
+    async obtenerTelemetria(id: number, modo: ModoTelemetria, fechaInicio?: Date, fechaFin?: Date): Promise<DatosTelemetria> {
         const congelador = await prisma.congelador.findFirst({
             where: { id, estatus: true },
             select: congeladorDetalleSelect,
@@ -32,7 +32,7 @@ export class PrismaCongeladorRepository implements ICongeladorRepository {
 
         const dispositivos: DispositivoConLecturas[] = await Promise.all(
             congelador.dispositivos.map((dispositivo) =>
-                this.getLecturasDispositivo(dispositivo.id, dispositivo.nombre, modo),
+                this.getLecturasDispositivo(dispositivo.id, dispositivo.nombre, modo, fechaInicio, fechaFin),
             ),
         );
 
@@ -52,6 +52,8 @@ export class PrismaCongeladorRepository implements ICongeladorRepository {
         idDispositivo: number,
         nombreDispositivo: string,
         modo: ModoTelemetria,
+        fechaInicio?: Date,
+        fechaFin?: Date,
     ): Promise<DispositivoConLecturas> {
         const select = { temperatura: true, ambiente: true, creado: true } as const;
         const whereBase = { idDispositivo, estatus: true };
@@ -59,9 +61,16 @@ export class PrismaCongeladorRepository implements ICongeladorRepository {
         let lecturas: LecturaDispositivo[];
 
         if (modo === "historico") {
-            const hace24h = new Date(Date.now() - MS_24H);
+            const whereHistorico = { ...whereBase } as any;
+            if (fechaInicio && fechaFin) {
+                whereHistorico.creado = { gte: fechaInicio, lte: fechaFin };
+            } else {
+                const hace24h = new Date(Date.now() - MS_24H);
+                whereHistorico.creado = { gte: hace24h };
+            }
+
             lecturas = await prisma.data.findMany({
-                where: { ...whereBase, creado: { gte: hace24h } },
+                where: whereHistorico,
                 orderBy: { creado: "asc" },
                 select,
             });
