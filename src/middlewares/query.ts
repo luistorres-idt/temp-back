@@ -97,7 +97,7 @@ export class QuerySucursalesMiddleware {
 
     if (perfilNombre === PERFILES.SUPERUSUARIO) return next();
 
-    // Sanear filtros de tenant del querystring antes de imponer el scoping
+    const filtroId = where["id"];
     delete where["id"];
     delete where["cliente"];
 
@@ -105,6 +105,9 @@ export class QuerySucursalesMiddleware {
       where["id"] = { equals: idSucursal };
     } else if (idCliente) {
       where["cliente"] = { id: { equals: idCliente } };
+      if (filtroId) {
+        where["id"] = filtroId;
+      }
     }
 
     next();
@@ -128,13 +131,20 @@ export class QuerySeccionesMiddleware {
 
     if (perfilNombre === PERFILES.SUPERUSUARIO) return next();
 
-    // Sanear filtros de tenant del querystring
+    const filtroSucursal = where["sucursal"];
     delete where["sucursal"];
 
     if (idSucursal) {
       where["sucursal"] = { id: { equals: idSucursal } };
     } else if (idCliente) {
-      where["sucursal"] = { cliente: { id: { equals: idCliente } } };
+      if (filtroSucursal) {
+        where["sucursal"] = {
+          ...(filtroSucursal as any),
+          cliente: { id: { equals: idCliente } }
+        };
+      } else {
+        where["sucursal"] = { cliente: { id: { equals: idCliente } } };
+      }
     }
 
     next();
@@ -158,13 +168,27 @@ export class QueryCongeladoresMiddleware {
 
     if (perfilNombre === PERFILES.SUPERUSUARIO) return next();
 
-    // Sanear filtros de tenant del querystring
+    const filtroSeccion = where["seccion"];
     delete where["seccion"];
 
     if (idSucursal) {
-      where["seccion"] = { sucursal: { id: { equals: idSucursal } } };
+      if (filtroSeccion) {
+        where["seccion"] = {
+          ...(filtroSeccion as any),
+          sucursal: { id: { equals: idSucursal } }
+        };
+      } else {
+        where["seccion"] = { sucursal: { id: { equals: idSucursal } } };
+      }
     } else if (idCliente) {
-      where["seccion"] = { sucursal: { cliente: { id: { equals: idCliente } } } };
+      if (filtroSeccion) {
+        where["seccion"] = {
+          ...(filtroSeccion as any),
+          sucursal: { cliente: { id: { equals: idCliente } } }
+        };
+      } else {
+        where["seccion"] = { sucursal: { cliente: { id: { equals: idCliente } } } };
+      }
     }
 
     next();
@@ -188,13 +212,27 @@ export class QueryDispositivosMiddleware {
 
     if (perfilNombre === PERFILES.SUPERUSUARIO) return next();
 
-    // Sanear filtros de tenant del querystring
+    const filtroCongelador = where["congelador"];
     delete where["congelador"];
 
     if (idSucursal) {
-      where["congelador"] = { seccion: { sucursal: { id: { equals: idSucursal } } } };
+      if (filtroCongelador) {
+        where["congelador"] = {
+          ...(filtroCongelador as any),
+          seccion: { sucursal: { id: { equals: idSucursal } } }
+        };
+      } else {
+        where["congelador"] = { seccion: { sucursal: { id: { equals: idSucursal } } } };
+      }
     } else if (idCliente) {
-      where["congelador"] = { seccion: { sucursal: { cliente: { id: { equals: idCliente } } } } };
+      if (filtroCongelador) {
+        where["congelador"] = {
+          ...(filtroCongelador as any),
+          seccion: { sucursal: { cliente: { id: { equals: idCliente } } } }
+        };
+      } else {
+        where["congelador"] = { seccion: { sucursal: { cliente: { id: { equals: idCliente } } } } };
+      }
     }
 
     next();
