@@ -1349,7 +1349,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"identificador\": \"GW-001-ABC\",\n  \"idSeccion\": 1,\n  \"estatus\": true\n}",
+                            "raw": "{\n  \"nombre\": \"Gateway Principal Matriz\",\n  \"identificador\": \"GW-001-ABC\",\n  \"idSeccion\": 1,\n  \"estatus\": true\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1381,7 +1381,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"identificador\": \"GW-001-UPDATED\"\n}",
+                            "raw": "{\n  \"nombre\": \"Gateway Matriz Actualizado\",\n  \"identificador\": \"GW-001-XYZ\",\n  \"estatus\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1479,7 +1479,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"nombre\": \"Sensor Temp #1\",\n  \"idGateway\": 1,\n  \"idCongelador\": 1,\n  \"estatus\": true\n}",
+                            "raw": "{\n  \"nombre\": \"Sensor Temp #1\",\n  \"identificador\": \"00:1A:2B:3C:4D:5E\",\n  \"idGateway\": 1,\n  \"idCongelador\": 1,\n  \"estatus\": true\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1511,7 +1511,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"nombre\": \"Sensor Recalibrado\"\n}",
+                            "raw": "{\n  \"nombre\": \"Sensor Temp #1 (Editado)\",\n  \"identificador\": \"00:1A:2B:3C:4D:5F\",\n  \"estatus\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1611,7 +1611,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"identificador\": \"GW-001\",\n  \"data\": [\n    {\n      \"identificador\": \"SENSOR-01\",\n      \"signal\": {\n        \"bateria\": 85.5,\n        \"rssi\": -70,\n        \"snr\": 10\n      },\n      \"data\": {\n        \"temperatura\": -18.5,\n        \"ambiente\": 22.3\n      }\n    },\n    {\n      \"identificador\": \"SENSOR-02\",\n      \"signal\": {\n        \"bateria\": 92.0,\n        \"rssi\": -65,\n        \"snr\": 12\n      },\n      \"data\": {\n        \"temperatura\": -20.1,\n        \"ambiente\": 21.8\n      }\n    }\n  ]\n}",
+                            "raw": "{\n  \"identificador\": \"GW-001\",\n  \"data\": [\n    {\n      \"identificador\": \"00:1A:2B:3C:4D:5E\",\n      \"signal\": {\n        \"bateria\": 85.5,\n        \"rssi\": -70,\n        \"snr\": 10\n      },\n      \"data\": {\n        \"temperatura\": -18.5,\n        \"ambiente\": 22.3\n      }\n    },\n    {\n      \"identificador\": \"00:1A:2B:3C:4D:5F\",\n      \"signal\": {\n        \"bateria\": 92,\n        \"rssi\": -65,\n        \"snr\": 12\n      },\n      \"data\": {\n        \"temperatura\": -20.1,\n        \"ambiente\": 21.8\n      }\n    }\n  ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
