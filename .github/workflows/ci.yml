@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'feat/**'
+      - 'refactor/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  # ─── Job 1: Tests unitarios ─────────────────────────────────────────────────
+  test:
+    name: Tests unitarios
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Configurar Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Ejecutar tests con cobertura
+        run: pnpm test:coverage
+
+      - name: Subir reporte de cobertura a Codecov
+        uses: codecov/codecov-action@v4
+        # Solo se ejecuta en Node 22 para no duplicar el reporte
+        if: matrix.node-version == '22.x'
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # ─── Job 2: Build TypeScript ─────────────────────────────────────────────────
+  build:
+    name: Compilacion TypeScript
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Generar cliente Prisma
+        run: pnpm prisma generate
+
+      - name: Compilar TypeScript
+        run: pnpm build
