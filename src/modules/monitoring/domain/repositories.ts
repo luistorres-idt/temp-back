@@ -14,6 +14,7 @@ export interface DatosSensor {
     data: {
         temperatura: number;
         ambiente: number;
+        humedad?: number | null;
     };
 }
 
@@ -29,7 +30,7 @@ export interface ComandoIngesta {
  * Resultado de la ingesta de un sensor individual.
  */
 export interface ResultadoIngesta {
-    data: { id: number; temperatura: number; ambiente: number; creado: Date };
+    data: { id: number; temperatura: number; ambiente: number; humedad: number | null; creado: Date };
     infoEstatus: { id: number; bateria: number; rssi: number; snr: number; creado: Date };
 }
 
@@ -73,6 +74,7 @@ export interface IDataRepository {
     persistirLectura(params: {
         temperatura: number;
         ambiente: number;
+        humedad?: number | null;
         idDispositivo: number;
         bateria: number;
         rssi: number;
@@ -95,6 +97,7 @@ export type ModoTelemetria = "vivo" | "historico";
 export interface LecturaDispositivo {
     temperatura: number;
     ambiente: number;
+    humedad: number | null;
     creado: Date;
 }
 
@@ -136,7 +139,7 @@ export interface ICongeladorRepository {
 export interface DispositivoConData {
     id: number;
     nombre: string;
-    data: { temperatura: number; ambiente: number; creado: Date }[];
+    data: { temperatura: number; ambiente: number; humedad: number | null; creado: Date }[];
     infoEstatus: { bateria: number; rssi: number; snr: number; creado: Date }[];
 }
 

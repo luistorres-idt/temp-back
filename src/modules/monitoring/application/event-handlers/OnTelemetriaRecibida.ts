@@ -35,6 +35,7 @@ export class OnTelemetriaRecibida {
             nombreDispositivo: data.nombreDispositivo,
             temperatura: data.temperatura,
             ambiente: data.ambiente,
+            humedad: data.humedad,
             timestamp: data.timestamp,
         });
 
