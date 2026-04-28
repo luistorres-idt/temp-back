@@ -55,7 +55,7 @@ export class PrismaCongeladorRepository implements ICongeladorRepository {
         fechaInicio?: Date,
         fechaFin?: Date,
     ): Promise<DispositivoConLecturas> {
-        const select = { temperatura: true, ambiente: true, creado: true } as const;
+        const select = { temperatura: true, ambiente: true, humedad: true, creado: true } as const;
         const whereBase = { idDispositivo, estatus: true };
 
         let lecturas: LecturaDispositivo[];
