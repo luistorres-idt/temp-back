@@ -47,11 +47,11 @@ export interface IDataRepository {
     buscarGatewayPorIdentificador(identificador: string): Promise<{ id: number } | null>;
 
     /**
-     * Busca un dispositivo activo por su nombre e id de gateway.
+     * Busca un dispositivo activo por su identificador (MAC address) e id de gateway.
      * Incluye las relaciones necesarias para resolver el room de WebSocket.
      */
-    buscarDispositivoPorNombreYGateway(
-        nombre: string,
+    buscarDispositivoPorIdentificadorYGateway(
+        identificador: string,
         idGateway: number,
     ): Promise<{
         id: number;
