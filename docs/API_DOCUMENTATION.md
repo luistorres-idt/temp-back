@@ -161,6 +161,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 | `signal.snr` | int | Si | Relación señal/ruido (SNR) |
 | `data.temperatura` | number | Si | Temperatura de la lectura |
 | `data.ambiente` | number | Si | Temperatura ambiente |
+| `data.humedad` | number | No | Humedad relativa (opcional) |
 
 ### Ejemplo de Body
 ```json
@@ -176,7 +177,8 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
       },
       "data": {
         "temperatura": -18.5,
-        "ambiente": 22.3
+        "ambiente": 22.3,
+        "humedad": 65.4
       }
     },
     {
@@ -188,7 +190,8 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
       },
       "data": {
         "temperatura": -20.1,
-        "ambiente": 21.8
+        "ambiente": 21.8,
+        "humedad": 58.2
       }
     }
   ]
@@ -201,7 +204,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
   "mensaje": "El registro se ha creado exitosamente",
   "data": [
     {
-      "data": { "id": 1, "temperatura": -18.5, "ambiente": 22.3, ... },
+      "data": { "id": 1, "temperatura": -18.5, "ambiente": 22.3, "humedad": 65.4, ... },
       "infoEstatus": { "id": 1, "bateria": 85.5, "rssi": -70, "snr": 10, ... }
     }
   ]
