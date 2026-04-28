@@ -28,6 +28,7 @@ export class DataControllerV2 {
     }
 
     crearElemento = async (req: AppRequest, res: Response): Promise<void> => {
+        console.log(req.body);
         const result = evaluarData(req.body);
 
         if (!result.success) {

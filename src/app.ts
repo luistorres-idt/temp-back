@@ -56,8 +56,10 @@ app.use(AppRouter.routes);
 // Error handler global
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof Error) {
+        console.error(err.message);
         return res.status(500).json({ error: err.message.replace(/\n/g, "") });
     }
+    console.log("Error desconocido");
     return res.status(500).json({ error: "Ha ocurrido un error" });
 });
 
