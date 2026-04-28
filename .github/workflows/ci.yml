@@ -71,6 +71,8 @@ jobs:
 
       - name: Generar cliente Prisma
         run: pnpm prisma generate
+        env:
+          DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
 
       - name: Compilar TypeScript
         run: pnpm build
