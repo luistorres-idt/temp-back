@@ -32,7 +32,7 @@ const dispositivoFake = {
 }
 
 const lecturaFake = {
-    data: { id: 1, temperatura: -18.5, ambiente: 22.3, creado: new Date() },
+    data: { id: 1, temperatura: -18.5, ambiente: 22.3, humedad: null, creado: new Date() },
     infoEstatus: { id: 1, bateria: 85.5, rssi: -70, snr: 10, creado: new Date() },
 }
 
