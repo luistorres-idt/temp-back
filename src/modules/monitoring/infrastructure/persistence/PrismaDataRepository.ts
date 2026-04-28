@@ -24,10 +24,10 @@ export class PrismaDataRepository implements IDataRepository {
         });
     }
 
-    async buscarDispositivoPorNombreYGateway(nombre: string, idGateway: number) {
+    async buscarDispositivoPorIdentificadorYGateway(identificador: string, idGateway: number) {
         return this.db.dispositivo.findFirst({
             where: {
-                nombre,
+                identificador,
                 idGateway,
                 estatus: true,
             },

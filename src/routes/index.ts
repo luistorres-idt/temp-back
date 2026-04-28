@@ -36,6 +36,8 @@ export class AppRouter {
         // Definidas antes del middleware de auth global de app.ts
         // ----------------------------------------------------------------
         router.use("/api/autenticacion", crearRouterAutenticacion());
+        router.use("/api/usuarios", QueryUsuariosMiddleware.execute, crearRouterCRUD(new UsuariosController()));
+
 
         // Ingesta de data desde dispositivos IoT (sin token de usuario)
         // [DDD] Usando DataControllerV2 — logica extraida a IngerirDatosSensor use case
@@ -57,7 +59,6 @@ export class AppRouter {
         router.use("/api/modulos", crearRouterCRUD(new ModulosController()));
         router.use("/api/operaciones", crearRouterCRUD(new OperacionesController()));
         router.use("/api/perfiles", crearRouterCRUD(new PerfilesController()));
-        router.use("/api/usuarios", QueryUsuariosMiddleware.execute, crearRouterCRUD(new UsuariosController()));
         router.use("/api/clientes", QueryClientesMiddleware.execute, crearRouterCRUD(new ClientesController()));
         router.use("/api/sucursales", QuerySucursalesMiddleware.execute, crearRouterCRUD(new SucursalesController()));
         router.use("/api/secciones", QuerySeccionesMiddleware.execute, crearRouterCRUD(new SeccionesController()));

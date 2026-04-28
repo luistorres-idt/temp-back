@@ -75,8 +75,8 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         sensor: DatosSensor,
         idGateway: number,
     ): Promise<{ resultado: IngestaResponseDto; eventos: DomainEvent[] }> {
-        // Buscar dispositivo
-        const dispositivo = await repo.buscarDispositivoPorNombreYGateway(
+        // Buscar dispositivo por su MAC/identificador
+        const dispositivo = await repo.buscarDispositivoPorIdentificadorYGateway(
             sensor.identificador,
             idGateway,
         );
@@ -84,7 +84,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         if (!dispositivo) {
             throw new DomainError(
                 "DISPOSITIVO_NO_ENCONTRADO",
-                `Dispositivo '${sensor.identificador}' no encontrado para el gateway`,
+                `Dispositivo con identificador '${sensor.identificador}' no encontrado para el gateway`,
                 404,
             );
         }

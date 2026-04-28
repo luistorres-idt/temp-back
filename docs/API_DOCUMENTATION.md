@@ -155,7 +155,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `identificador` | string | Si | Nombre del dispositivo/sensor |
+| `identificador` | string | Si | Dirección MAC (o identificador único) del dispositivo/sensor |
 | `signal.bateria` | number | Si | Nivel de batería |
 | `signal.rssi` | int | Si | Intensidad de señal (RSSI) |
 | `signal.snr` | int | Si | Relación señal/ruido (SNR) |
@@ -168,7 +168,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
   "identificador": "GW-001",
   "data": [
     {
-      "identificador": "SENSOR-01",
+      "identificador": "00:1A:2B:3C:4D:5E",
       "signal": {
         "bateria": 85.5,
         "rssi": -70,
@@ -180,7 +180,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
       }
     },
     {
-      "identificador": "SENSOR-02",
+      "identificador": "00:1A:2B:3C:4D:5F",
       "signal": {
         "bateria": 92.0,
         "rssi": -65,
@@ -210,7 +210,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 
 ### Consideraciones
 - El `identificador` raíz debe corresponder a un **Gateway** registrado y activo en el sistema.
-- El `identificador` de cada sensor debe corresponder al **nombre** de un **Dispositivo** asociado a ese gateway.
+- El `identificador` de cada sensor debe corresponder a la **dirección MAC** de un **Dispositivo** asociado a ese gateway.
 - Si algún gateway o dispositivo no se encuentra, la transacción se revierte y no se crea ningún registro.
 
 ### Errores

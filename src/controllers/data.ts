@@ -18,6 +18,7 @@ export class DataController extends BaseController {
 
     //override para el metodo crearElemento
     crearElemento = async (req: AppRequest, res: Response): Promise<void> => {
+        console.log(req.body);
         const result = evaluarData(req.body);
 
         if (!result.success) {
