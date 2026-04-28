@@ -93,6 +93,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         const resultado = await repo.persistirLectura({
             temperatura: sensor.data.temperatura,
             ambiente: sensor.data.ambiente,
+            humedad: sensor.data.humedad ?? null,
             idDispositivo: dispositivo.id,
             bateria: sensor.signal.bateria,
             rssi: sensor.signal.rssi,
@@ -107,6 +108,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             nombreDispositivo: dispositivo.nombre,
             temperatura: sensor.data.temperatura,
             ambiente: sensor.data.ambiente,
+            humedad: sensor.data.humedad ?? null,
             idSucursal: dispositivo.congelador.seccion.sucursal.id,
             timestamp: resultado.data.creado?.toISOString() ?? new Date().toISOString(),
         });

@@ -10,6 +10,7 @@ export interface TelemetriaRecibidaData {
     nombreDispositivo: string;
     temperatura: number;
     ambiente: number;
+    humedad: number | null;
     idSucursal: number;
     timestamp: string;
 }

@@ -13,6 +13,7 @@ export const DataSchema = z.object({
             data: z.object({
                 temperatura: z.number(),
                 ambiente: z.number(),
+                humedad: z.number().optional(),
             }),
         })
     ),

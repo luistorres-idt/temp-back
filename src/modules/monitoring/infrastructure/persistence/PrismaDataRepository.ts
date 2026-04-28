@@ -52,6 +52,7 @@ export class PrismaDataRepository implements IDataRepository {
     async persistirLectura(params: {
         temperatura: number;
         ambiente: number;
+        humedad?: number | null;
         idDispositivo: number;
         bateria: number;
         rssi: number;
@@ -62,6 +63,7 @@ export class PrismaDataRepository implements IDataRepository {
             data: {
                 temperatura: params.temperatura,
                 ambiente: params.ambiente,
+                humedad: params.humedad ?? null,
                 idDispositivo: params.idDispositivo,
             },
         });

@@ -154,6 +154,7 @@ model Data {
   id            Int         @id @default(autoincrement())
   temperatura   Float
   ambiente      Float
+  humedad       Float?
   creado        DateTime    @default(now())
   actualizado   DateTime    @updatedAt
   estatus       Boolean     @default(true)
