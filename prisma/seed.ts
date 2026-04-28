@@ -8,7 +8,7 @@ async function main() {
     for (const modulo of modulos) {
         await prisma.modulo.upsert({
             where: { id: modulo.id },
-            update: {},
+            update: modulo,
             create: modulo,
         });
     }
@@ -18,7 +18,7 @@ async function main() {
     for (const operacion of operaciones) {
         await prisma.operacion.upsert({
             where: { id: operacion.id },
-            update: {},
+            update: operacion,
             create: operacion,
         });
     }
@@ -28,7 +28,7 @@ async function main() {
     for (const accion of acciones) {
         await prisma.accion.upsert({
             where: { id: accion.id },
-            update: {},
+            update: accion,
             create: accion,
         });
     }
@@ -38,7 +38,7 @@ async function main() {
     for (const perfil of perfiles) {
         await prisma.perfil.upsert({
             where: { id: perfil.id },
-            update: {},
+            update: perfil,
             create: perfil,
         });
     }
@@ -48,7 +48,7 @@ async function main() {
     for (const permiso of permisos) {
         await prisma.permiso.upsert({
             where: { id: permiso.id },
-            update: {},
+            update: permiso,
             create: permiso,
         });
     }
@@ -58,7 +58,7 @@ async function main() {
     for (const cliente of clientes) {
         await prisma.cliente.upsert({
             where: { id: cliente.id },
-            update: {},
+            update: cliente,
             create: cliente,
         });
     }
@@ -68,7 +68,7 @@ async function main() {
     for (const sucursal of sucursales) {
         await prisma.sucursal.upsert({
             where: { id: sucursal.id },
-            update: {},
+            update: sucursal,
             create: sucursal,
         });
     }
@@ -79,7 +79,7 @@ async function main() {
         // Asegurarse de utilizar el hash o password predefinido en "datos.ts"
         await prisma.usuario.upsert({
             where: { id: usuario.id },
-            update: {},
+            update: usuario,
             create: usuario,
         });
     }
@@ -89,7 +89,7 @@ async function main() {
     for (const seccion of secciones) {
         await prisma.seccion.upsert({
             where: { id: seccion.id },
-            update: {},
+            update: seccion,
             create: seccion,
         });
     }
@@ -99,7 +99,7 @@ async function main() {
     for (const congelador of congeladores) {
         await prisma.congelador.upsert({
             where: { id: congelador.id },
-            update: {},
+            update: congelador,
             create: congelador,
         });
     }
@@ -109,7 +109,7 @@ async function main() {
     for (const gateway of gateways) {
         await prisma.gateway.upsert({
             where: { id: gateway.id },
-            update: {},
+            update: gateway,
             create: gateway,
         });
     }
@@ -119,7 +119,7 @@ async function main() {
     for (const dispositivo of dispositivos) {
         await prisma.dispositivo.upsert({
             where: { id: dispositivo.id },
-            update: {},
+            update: dispositivo,
             create: dispositivo,
         });
     }

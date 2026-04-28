@@ -72,8 +72,8 @@ for (const accion of accionesUsuarioFinal) {
 }
 
 export const perfiles = [
-    { id: 1, nombre: "Super Administrador" },
-    { id: 2, nombre: "Usuario Final" }
+    { id: 1, nombre: "superusuario" },
+    { id: 2, nombre: "administrador" }
 ];
 
 export const clientes = [
@@ -88,8 +88,8 @@ export const sucursales = [
 ];
 
 export const usuarios = [
-    { id: 1, nombre: "Super", apellido: "Admin", correo: "admin@contratiempo.com", password: defaultPasswordHash, idPerfil: 1 },
-    { id: 2, nombre: "Juan", apellido: "Perez", correo: "juan@torito.com", password: defaultPasswordHash, idPerfil: 2, idCliente: 1, idSucursal: 1 }
+    { id: 1, nombre: "admin", apellido: "Admin", correo: "admin@mail.com", password: defaultPasswordHash, idPerfil: 1 },
+    { id: 2, nombre: "Juan", apellido: "Perez", correo: "juan@torito.com", password: defaultPasswordHash, idPerfil: 2, idCliente: 1 }
 ];
 
 export const secciones = [
@@ -103,10 +103,10 @@ export const congeladores = [
 ];
 
 export const gateways = [
-    { id: 1, identificador: "GW-MATRIZ-01", idSeccion: 1 }
+    { id: 1, identificador: "GW-MATRIZ-01", nombre: "Gateway Principal", idSeccion: 1 }
 ];
 
 export const dispositivos = [
-    { id: 1, nombre: "Sensor Temp Congelador 1", idGateway: 1, idCongelador: 1 },
-    { id: 2, nombre: "Sensor Temp Vitrina 1", idGateway: 1, idCongelador: 2 }
+    { id: 1, nombre: "Sensor Temp Congelador 1", identificador: "00:1A:2B:3C:4D:5E", idGateway: 1, idCongelador: 1 },
+    { id: 2, nombre: "Sensor Temp Vitrina 1", identificador: "00:1A:2B:3C:4D:5F", idGateway: 1, idCongelador: 2 }
 ];
