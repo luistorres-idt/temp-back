@@ -124,7 +124,7 @@ model Congelador {
 
 model Gateway {
   id            Int           @id @default(autoincrement())
-  identificador String
+  identificador String        @unique
   nombre        String
   creado        DateTime      @default(now())
   actualizado   DateTime      @updatedAt
@@ -138,7 +138,7 @@ model Gateway {
 model Dispositivo {
   id            Int           @id @default(autoincrement())
   nombre        String
-  identificador String
+  identificador String        @unique
   creado        DateTime      @default(now())
   actualizado   DateTime      @updatedAt
   estatus       Boolean       @default(true)
