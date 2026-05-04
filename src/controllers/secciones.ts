@@ -35,15 +35,14 @@ export class SeccionesController extends BaseController {
                 let fechaMasReciente: Date | null = null;
 
                 activos.forEach((dispositivo) => {
-                    dispositivo.data.forEach((d) => {
-                        sumTemp += d.temperatura;
-                        sumAmbiente += d.ambiente;
-                        totalRegistros++;
-                    });
+                    const lecturaActual = dispositivo.data[0];
+                    sumTemp += lecturaActual.temperatura;
+                    sumAmbiente += lecturaActual.ambiente;
+                    totalRegistros++;
+                    
                     // Conservar la lectura mas reciente entre todos los dispositivos
-                    const primeraFecha = dispositivo.data[0].creado;
-                    if (!fechaMasReciente || primeraFecha > fechaMasReciente) {
-                        fechaMasReciente = primeraFecha;
+                    if (!fechaMasReciente || lecturaActual.creado > fechaMasReciente) {
+                        fechaMasReciente = lecturaActual.creado;
                     }
                 });
 

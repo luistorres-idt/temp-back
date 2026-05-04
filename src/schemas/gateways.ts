@@ -13,7 +13,15 @@ export const gatewaySelect = {
     nombre: true,
     estatus: true,
     creado: true,
-    seccion: { select: { id: true, nombre: true } },
+    seccion: {
+        select: {
+            id: true,
+            nombre: true,
+            sucursal: {
+                select: { id: true, nombre: true, cliente: { select: { id: true, nombre: true } } }
+            }
+        }
+    },
 };
 
 export const evaluarGateway = (data: unknown) => GatewaySchema.safeParse(data);
