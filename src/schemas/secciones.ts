@@ -11,7 +11,7 @@ export const seccionSelect = {
     nombre: true,
     estatus: true,
     creado: true,
-    sucursal: { select: { id: true, nombre: true } },
+    sucursal: { select: { id: true, nombre: true, cliente: { select: { id: true, nombre: true } } } },
     congeladores: {
         where: { estatus: true },
         select: {

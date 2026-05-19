@@ -13,7 +13,7 @@ export const congeladorSelect = {
     temperaturaObjetivo: true,
     estatus: true,
     creado: true,
-    seccion: { select: { id: true, nombre: true } },
+    seccion: { select: { id: true, nombre: true, sucursal: { select: { id: true, nombre: true, cliente: { select: { id: true, nombre: true } } } } } },
 };
 
 /**
@@ -24,7 +24,8 @@ export const congeladorDetalleSelect = {
     id: true,
     nombre: true,
     temperaturaObjetivo: true,
-    seccion: { select: { id: true, nombre: true, sucursal: { select: { id: true, nombre: true } } } },
+    estatus: true,
+    seccion: { select: { id: true, nombre: true, sucursal: { select: { id: true, nombre: true, cliente: { select: { id: true, nombre: true } } } } } },
     dispositivos: {
         where: { estatus: true },
         select: {
