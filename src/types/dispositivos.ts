@@ -9,6 +9,7 @@ export type DispositivoInputParcial = Partial<DispositivoInput>;
 export interface DispositivoResponse {
     id: number;
     nombre: string;
+    identificador: string;
     estatus: boolean;
     creado: Date;
     gateway: {

@@ -1,10 +1,22 @@
 import { z } from "zod/v4";
 
 export const DataSchema = z.object({
-    temperatura: z.number(),
-    ambiente: z.number(),
-    idDispositivo: z.number().int(),
-    estatus: z.boolean().nullish(),
+    identificador: z.string(),//identificador del gateway
+    data: z.array(
+        z.object({
+            identificador: z.string(),//identificador del sensor
+            signal: z.object({
+                bateria: z.number(),
+                rssi: z.number(),
+                snr: z.number(),
+            }),
+            data: z.object({
+                temperatura: z.number(),
+                ambiente: z.number(),
+                humedad: z.number().optional(),
+            }),
+        })
+    ),
 });
 
 export const dataSelect = {

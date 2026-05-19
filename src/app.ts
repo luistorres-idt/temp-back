@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import { createServer } from "node:http";
 import morgan from "morgan";
 import { PORT } from "./config/settings.js";
 import { CORSMiddleware } from "./middlewares/cors.js";
@@ -7,9 +8,24 @@ import { AutorizacionMiddleware } from "./middlewares/autorizacion/autorizacion.
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
+import { inicializarSocket } from "./config/socket.js";
+import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js";
 import type { Application } from "express";
+// [DDD] Event handler del bounded context Monitoring
+import { OnTelemetriaRecibida } from "./modules/monitoring/application/event-handlers/OnTelemetriaRecibida.js";
 
 const app: Application = express();
+const httpServer = createServer(app);
+
+// Socket.IO
+const io = initializeSocketServer(httpServer);
+NotificationEmitter.getInstance().initialize(io);
+
+// Inicializar Socket.io congeladores
+inicializarSocket(io);
+
+// [DDD] Registrar event handlers del bounded context Monitoring
+new OnTelemetriaRecibida(io).registrar();
 
 // Seguridad
 app.disable("x-powered-by");
@@ -24,13 +40,11 @@ app.use(CORSMiddleware.execute());
 app.get("/healthy", (_req: Request, res: Response) => {
     res.json({
         status: "ok",
-        message: "API funcionando correctamente 🚀",
+        message: "API funcionando correctamente",
     });
 });
 
-// Middlewares de autenticación y autorización
-//app.use(AutenticacionMiddleware.execute);
-// app.use(AutorizacionMiddleware.execute); // Descomentar cuando se configuren los permisos
+// Autenticación: aplicada en AppRouter, que distingue rutas públicas y protegidas
 
 // Middlewares de paginación y filtros
 app.use(PaginacionMiddleware.execute);
@@ -42,13 +56,15 @@ app.use(AppRouter.routes);
 // Error handler global
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof Error) {
+        console.error(err.message);
         return res.status(500).json({ error: err.message.replace(/\n/g, "") });
     }
+    console.log("Error desconocido");
     return res.status(500).json({ error: "Ha ocurrido un error" });
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}\n`);
 });
 

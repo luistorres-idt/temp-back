@@ -1,0 +1,1800 @@
+{
+    "info": {
+        "name": "Sistema Monitoreo Alimentos API",
+        "description": "# 🌡️ Sistema de Monitoreo de Alimentos - API REST\n\nColección completa organizada por entidades con documentación.\n\n## 🔐 Autenticación\nBearer Token (JWT). POST login → copia `accessToken` → se aplica automáticamente.\n\n## 📄 Paginación (GET /)\n| Param | Default | Descripción |\n|-------|---------|----|\n| `elementos` | 8 | Por página |\n| `pagina` | 1 | Página |\n| `listado` | false | true = todos |\n\n## 🔍 Filtros (GET /)\n| Param | Default | Descripción |\n|-------|---------|----|\n| `estatus` | true | Activo/inactivo |\n| `nombre` | — | Búsqueda parcial (contains) |\n| `identificador` | — | Búsqueda parcial |\n| `fecha` | — | YYYY-MM-DD |\n\n## 📦 Respuestas\n```\nÉxito listado: { mensaje, data: [...], resultados }\nÉxito crear (201): { mensaje, data: {...} }\nÉxito editar/obtener (200): { mensaje, data: {...} }\nError: { error: \"...\" }\n```\n\n## 🌐 Base URL: `http://localhost:3000`",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "description": "URL base del servidor"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "description": "Token JWT obtenido del login"
+        }
+    ],
+    "item": [
+        {
+            "name": "🏥 Health Check",
+            "request": {
+                "auth": {
+                    "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/healthy",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "healthy"
+                    ]
+                },
+                "description": "Verifica que la API esté operativa. **No requiere autenticación.**\n\n### Respuesta (200)\n```json\n{ \"status\": \"ok\", \"message\": \"API funcionando correctamente 🚀\" }\n```"
+            }
+        },
+        {
+            "name": "🔐 Autenticación",
+            "description": "Login público. Devuelve tokens JWT para acceder a rutas protegidas.",
+            "item": [
+                {
+                    "name": "Iniciar Sesión (Login)",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"correo\": \"admin@ejemplo.com\",\n  \"password\": \"tu_password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/autenticacion/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "autenticacion",
+                                "login"
+                            ]
+                        },
+                        "description": "Inicia sesión. Devuelve `accessToken` (8h) y `refreshToken` (7d).\n\n**No requiere autenticación.**\n\n### Body (JSON)\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `correo` | string (email) | ✅ | Correo electrónico |\n| `password` | string | ✅ | Contraseña |\n\n### Respuesta exitosa (200)\n```json\n{\n  \"mensaje\": \"Sesion iniciada correctamente\",\n  \"accessToken\": \"eyJhbGciOiJIUzI1...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1...\"\n}\n```\n\n### Datos en el token\nEl token JWT contiene: usuario (id, nombre, correo), perfil (id, nombre, acciones/permisos), cliente y sucursal.\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 400 | Datos de validación incorrectos |\n| 401 | Credenciales inválidas |\n| 500 | Error interno |"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "👥 Usuarios",
+            "description": "CRUD de usuarios. El **password se hashea automáticamente** al crear y editar.\n\n### Campos de respuesta\n```json\n{ \"id\", \"nombre\", \"apellido\", \"correo\", \"estatus\", \"creado\", \"perfil\": {id, nombre}, \"cliente\": {id, nombre}, \"sucursal\": {id, nombre} }\n```",
+            "item": [
+                {
+                    "name": "Listar Usuarios",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/usuarios?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "usuarios"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8",
+                                    "description": "Elementos por página (default: 8)"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "description": "Número de página"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true,
+                                    "description": "true = sin paginar"
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true,
+                                    "description": "Filtrar por estatus"
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Buscar por nombre"
+                                },
+                                {
+                                    "key": "fecha",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Filtrar fecha YYYY-MM-DD"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Usuario por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/usuarios/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "usuarios",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un usuario por ID.\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 404 | No encontrado |"
+                    }
+                },
+                {
+                    "name": "Crear Usuario",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"correo\": \"juan@ejemplo.com\",\n  \"password\": \"password123\",\n  \"idPerfil\": 1,\n  \"idCliente\": 1,\n  \"idSucursal\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/usuarios",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "usuarios"
+                            ]
+                        },
+                        "description": "Crea un usuario. **Password se hashea automáticamente.**\n\n### Body (JSON)\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `nombre` | string | ✅ | Nombre |\n| `apellido` | string | ✅ | Apellido |\n| `correo` | string (email) | ✅ | Correo (único) |\n| `password` | string | ✅ | Contraseña |\n| `idPerfil` | int | ✅ | ID del perfil |\n| `idCliente` | int | ❌ | ID del cliente (nullable) |\n| `idSucursal` | int | ❌ | ID de sucursal (nullable) |\n| `estatus` | boolean | ❌ | Estatus |"
+                    }
+                },
+                {
+                    "name": "Editar Usuario",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Juan Actualizado\",\n  \"estatus\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/usuarios/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "usuarios",
+                                "1"
+                            ]
+                        },
+                        "description": "Edita parcialmente. Solo envía campos a cambiar. Si se envía `password`, se hashea.\n\n### Body - Todos opcionales\nnombre, apellido, correo, password, idPerfil, idCliente, idSucursal, estatus"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "👤 Perfiles",
+            "description": "CRUD de perfiles (roles: Admin, Operador, etc.).\n\nResponse: `{ id, nombre, estatus, creado }`",
+            "item": [
+                {
+                    "name": "Listar Perfiles",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/perfiles?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "perfiles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Perfil por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/perfiles/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "perfiles",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Perfil",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Administrador\",\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/perfiles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "perfiles"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Perfil",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Super Admin\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/perfiles/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "perfiles",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📦 Módulos",
+            "description": "CRUD de módulos del sistema (Usuarios, Reportes, etc.).\n\nResponse: `{ id, nombre, estatus, creado }`",
+            "item": [
+                {
+                    "name": "Listar Módulos",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/modulos?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "modulos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Módulo por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/modulos/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "modulos",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Módulo",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Usuarios\",\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/modulos",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "modulos"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Módulo",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Módulo Actualizado\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/modulos/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "modulos",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "⚙️ Operaciones",
+            "description": "CRUD de operaciones (Crear, Leer, Actualizar, etc.).\n\nResponse: `{ id, nombre, estatus, creado }`",
+            "item": [
+                {
+                    "name": "Listar Operaciones",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/operaciones?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "operaciones"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Operación por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/operaciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "operaciones",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Operación",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Crear\",\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/operaciones",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "operaciones"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Operación",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Leer\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/operaciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "operaciones",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🎯 Acciones",
+            "description": "CRUD de acciones (módulo + operación = permiso).\n\nResponse: `{ id, nombre, estatus, creado, modulo: {id, nombre}, operacion: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Acciones",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/acciones?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "acciones"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Acción por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/acciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "acciones",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Acción",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Crear Usuarios\",\n  \"moduloId\": 1,\n  \"operacionId\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/acciones",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "acciones"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| moduloId | int | ✅ |\n| operacionId | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Acción",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Leer Usuarios\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/acciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "acciones",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🏢 Clientes",
+            "description": "CRUD de clientes (empresas).\n\nResponse: `{ id, nombre, estatus, creado }`",
+            "item": [
+                {
+                    "name": "Listar Clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/clientes?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Cliente por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/clientes/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "clientes",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Empresa Demo S.A.\",\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/clientes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "clientes"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Cliente",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Empresa Actualizada\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/clientes/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "clientes",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🏬 Sucursales",
+            "description": "CRUD de sucursales (ubicaciones de un cliente).\n\nResponse: `{ id, nombre, estatus, creado, cliente: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Sucursales",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/sucursales?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sucursales"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Sucursal por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/sucursales/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sucursales",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Sucursal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Sucursal Centro\",\n  \"idCliente\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/sucursales",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sucursales"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| idCliente | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Sucursal",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Sucursal Norte\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/sucursales/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sucursales",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📍 Secciones",
+            "description": "CRUD de secciones (áreas dentro de una sucursal).\n\nResponse: `{ id, nombre, estatus, creado, sucursal: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Secciones",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/secciones?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "secciones"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Sección por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/secciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "secciones",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Sección",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Área de Refrigeración\",\n  \"idSucursal\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/secciones",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "secciones"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| idSucursal | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Sección",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Área de Congelación\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/secciones/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "secciones",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "❄️ Congeladores",
+            "description": "CRUD de congeladores (equipos de refrigeración).\n\nResponse: `{ id, nombre, estatus, creado, seccion: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Congeladores",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/congeladores?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "congeladores"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Congelador por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/congeladores/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "congeladores",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Congelador",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Congelador Industrial #1\",\n  \"idSeccion\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/congeladores",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "congeladores"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| idSeccion | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Congelador",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Congelador Reparado\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/congeladores/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "congeladores",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📡 Gateways",
+            "description": "CRUD de gateways (dispositivos de comunicación).\n\nResponse: `{ id, identificador, estatus, creado, seccion: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Gateways",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "identificador",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Buscar por identificador"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Gateway por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Gateway",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Gateway Principal Matriz\",\n  \"identificador\": \"GW-001-ABC\",\n  \"idSeccion\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| identificador | string | ✅ |\n| idSeccion | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Gateway",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Gateway Matriz Actualizado\",\n  \"identificador\": \"GW-001-XYZ\",\n  \"estatus\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🔌 Dispositivos",
+            "description": "CRUD de dispositivos (sensores IoT de temperatura).\n\nResponse: `{ id, nombre, estatus, creado, gateway: {id, identificador}, congelador: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Dispositivos",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/dispositivos?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "dispositivos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "nombre",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Dispositivo por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/dispositivos/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "dispositivos",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Dispositivo",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Sensor Temp #1\",\n  \"identificador\": \"00:1A:2B:3C:4D:5E\",\n  \"idGateway\": 1,\n  \"idCongelador\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/dispositivos",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "dispositivos"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| nombre | string | ✅ |\n| idGateway | int | ✅ |\n| idCongelador | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Dispositivo",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Sensor Temp #1 (Editado)\",\n  \"identificador\": \"00:1A:2B:3C:4D:5F\",\n  \"estatus\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/dispositivos/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "dispositivos",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "🌡️ Data (Lecturas)",
+            "description": "Lecturas de temperatura de sensores.\n\n**GET/PATCH** funcionan como CRUD estándar.\n\n**POST** recibe un payload del gateway con múltiples sensores. Se crean registros en `Data` e `InfoEstatus` automáticamente dentro de una transacción.\n\nResponse GET: `{ id, temperatura, ambiente, estatus, creado, dispositivo: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Lecturas",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/data?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "data"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "fecha",
+                                    "value": "2025-01-15",
+                                    "disabled": true,
+                                    "description": "Filtrar por fecha YYYY-MM-DD"
+                                }
+                            ]
+                        }
+                    },
+                    "description": "Usa `fecha=YYYY-MM-DD` para filtrar por día."
+                },
+                {
+                    "name": "Obtener Lectura por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/data/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "data",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Registrar Lecturas (desde Gateway)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identificador\": \"GW-001\",\n  \"data\": [\n    {\n      \"identificador\": \"00:1A:2B:3C:4D:5E\",\n      \"signal\": {\n        \"bateria\": 85.5,\n        \"rssi\": -70,\n        \"snr\": 10\n      },\n      \"data\": {\n        \"temperatura\": -18.5,\n        \"ambiente\": 22.3\n      }\n    },\n    {\n      \"identificador\": \"00:1A:2B:3C:4D:5F\",\n      \"signal\": {\n        \"bateria\": 92,\n        \"rssi\": -65,\n        \"snr\": 12\n      },\n      \"data\": {\n        \"temperatura\": -20.1,\n        \"ambiente\": 21.8\n      }\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/data",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "data"
+                            ]
+                        },
+                        "description": "Registra lecturas de múltiples sensores de un gateway. Crea registros en `Data` e `InfoEstatus` en una transacción atómica.\n\n### Body\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Identificador del gateway |\n| `data` | array | ✅ | Array de sensores |\n\n### Objeto sensor (cada elemento del array `data`)\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Nombre del dispositivo/sensor |\n| `signal.bateria` | number | ✅ | Nivel de batería |\n| `signal.rssi` | int | ✅ | Intensidad de señal |\n| `signal.snr` | int | ✅ | Relación señal/ruido |\n| `data.temperatura` | number | ✅ | Temperatura de la lectura |\n| `data.ambiente` | number | ✅ | Temperatura ambiente |\n\n### Respuesta exitosa (201)\n```json\n{\n  \"mensaje\": \"El registro se ha creado exitosamente\",\n  \"data\": [\n    {\n      \"data\": { \"id\": 1, \"temperatura\": -18.5, ... },\n      \"infoEstatus\": { \"id\": 1, \"bateria\": 85.5, ... }\n    }\n  ]\n}\n```\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 400 | Datos de validación incorrectos o dispositivo no encontrado |\n| 404 | Gateway no encontrado |"
+                    }
+                },
+                {
+                    "name": "Editar Lectura",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"temperatura\": -20.0\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/data/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "data",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📊 Info Estatus",
+            "description": "CRUD de métricas de salud de dispositivos (batería, RSSI, SNR).\n\nResponse: `{ id, bateria, rssi, snr, estatus, creado, gateway: {id, identificador}, dispositivo: {id, nombre} }`",
+            "item": [
+                {
+                    "name": "Listar Info Estatus",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/info-estatus?elementos=8&pagina=1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "info-estatus"
+                            ],
+                            "query": [
+                                {
+                                    "key": "elementos",
+                                    "value": "8"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "listado",
+                                    "value": "false",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "estatus",
+                                    "value": "true",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "fecha",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Filtrar por fecha"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Obtener Info Estatus por ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/info-estatus/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "info-estatus",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear Info Estatus",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"bateria\": 85.5,\n  \"rssi\": -70,\n  \"snr\": 10,\n  \"idGateway\": 1,\n  \"idDispositivo\": 1,\n  \"estatus\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/info-estatus",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "info-estatus"
+                            ]
+                        },
+                        "description": "### Body\n| Campo | Tipo | Req |\n|-------|------|-----|\n| bateria | number | ✅ |\n| rssi | int | ✅ |\n| snr | int | ✅ |\n| idGateway | int | ✅ |\n| idDispositivo | int | ✅ |\n| estatus | boolean | ❌ |"
+                    }
+                },
+                {
+                    "name": "Editar Info Estatus",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"bateria\": 90.0\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/info-estatus/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "info-estatus",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

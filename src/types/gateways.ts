@@ -9,6 +9,7 @@ export type GatewayInputParcial = Partial<GatewayInput>;
 export interface GatewayResponse {
     id: number;
     identificador: string;
+    nombre: string;
     estatus: boolean;
     creado: Date;
     seccion: {

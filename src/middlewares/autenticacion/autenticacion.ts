@@ -5,12 +5,8 @@ import { TokenAutenticadorStrategy } from "./strategies/tokenAutenticadorStrateg
 
 export class AutenticacionMiddleware {
     static execute(req: AppRequest, res: Response, next: NextFunction): void {
-        // Rutas públicas (login, register)
-        if (req.path.includes("/autenticacion")) return next();
-
         const autenticador = new Autenticador();
 
-        // Autenticación por token JWT
         if (req.headers["authorization"]) {
             autenticador.establecerAutenticador(new TokenAutenticadorStrategy());
         }

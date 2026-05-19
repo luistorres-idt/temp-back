@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 
 export const DispositivoSchema = z.object({
     nombre: z.string(),
+    identificador: z.string(),
     idGateway: z.number().int(),
     idCongelador: z.number().int(),
     estatus: z.boolean().nullish(),
@@ -10,10 +11,57 @@ export const DispositivoSchema = z.object({
 export const dispositivoSelect = {
     id: true,
     nombre: true,
+    identificador: true,
     estatus: true,
     creado: true,
-    gateway: { select: { id: true, identificador: true } },
-    congelador: { select: { id: true, nombre: true } },
+    gateway: {
+        select: {
+            id: true,
+            identificador: true,
+            seccion: {
+                select: {
+                    id: true,
+                    nombre: true,
+                    sucursal: {
+                        select: {
+                            id: true,
+                            nombre: true,
+                            cliente: {
+                                select: {
+                                    id: true,
+                                    nombre: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    congelador: {
+        select: {
+            id: true,
+            nombre: true,
+            seccion: {
+                select: {
+                    id: true,
+                    nombre: true,
+                    sucursal: {
+                        select: {
+                            id: true,
+                            nombre: true,
+                            cliente: {
+                                select: {
+                                    id: true,
+                                    nombre: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
 };
 
 export const evaluarDispositivo = (data: unknown) => DispositivoSchema.safeParse(data);
