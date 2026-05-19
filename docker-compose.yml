@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # Descomenta esto si quieres que el backend comparta la red de tu base de datos
+    # networks:
+    #   - red-mysql
+
+# Descomenta esto si tu contenedor de MySQL esta corriendo en una red especifica de Docker
+# networks:
+#   red-mysql:
+#     external: true
