@@ -92,7 +92,7 @@ export class DataController extends BaseController {
                     const dataRegistro = await tx.data.create({
                         data: {
                             temperatura: sensor.data.temperatura,
-                            ambiente: sensor.data.ambiente,
+                            ambiente: sensor.data.ambiente ?? 0,
                             idDispositivo: dispositivo.id,
                         },
                     });
@@ -102,7 +102,7 @@ export class DataController extends BaseController {
                         data: {
                             bateria: sensor.signal.bateria,
                             rssi: sensor.signal.rssi,
-                            snr: sensor.signal.snr,
+                            snr: sensor.signal.snr ?? 0,
                             idGateway: gateway.id,
                             idDispositivo: dispositivo.id,
                         },
@@ -117,7 +117,7 @@ export class DataController extends BaseController {
                             idDispositivo: dispositivo.id,
                             nombreDispositivo: dispositivo.nombre,
                             temperatura: sensor.data.temperatura,
-                            ambiente: sensor.data.ambiente,
+                            ambiente: sensor.data.ambiente ?? 0,
                             timestamp: dataRegistro.creado?.toISOString() ?? new Date().toISOString(),
                             idSucursal: dispositivo.congelador.seccion.sucursal.id,
                         },

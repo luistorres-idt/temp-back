@@ -39,6 +39,5 @@ export class OnTelemetriaRecibida {
             timestamp: data.timestamp,
         });
 
-        console.log("Emitiendo evento telemetria:nueva");
     }
 }
