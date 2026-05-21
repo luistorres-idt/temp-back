@@ -10,6 +10,7 @@ const settingsSchema = z.object({
     DATABASE_USER: z.string(),
     DATABASE_PASSWORD: z.string(),
     DATABASE_NAME: z.string(),
+    OPENWEATHER_API_KEY: z.string(),
 });
 
 const result = settingsSchema.safeParse(process.env);
@@ -24,4 +25,5 @@ export const {
     TOKEN_SECRET_KEY,
     TOKEN_ACCESS_TIME,
     TOKEN_REFRESH_TIME,
+    OPENWEATHER_API_KEY,
 } = result.data;
