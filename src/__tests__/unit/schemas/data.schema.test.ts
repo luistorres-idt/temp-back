@@ -66,10 +66,22 @@ describe('DataSchema - validación del payload IoT', () => {
             expect(result.success).toBe(false)
         })
 
-        it('falla si data.ambiente no es número', () => {
-            const sensor = { ...sensorValido(), data: { temperatura: -18.5, ambiente: null } }
+        it('falla si data.ambiente es un string (tipo inválido)', () => {
+            const sensor = { ...sensorValido(), data: { temperatura: -18.5, ambiente: 'caliente' } }
             const result = evaluarData({ identificador: 'GW-001', data: [sensor] })
             expect(result.success).toBe(false)
+        })
+
+        it('acepta data.ambiente como null (se resolverá vía proveedor externo)', () => {
+            const sensor = { ...sensorValido(), data: { temperatura: -18.5, ambiente: null } }
+            const result = evaluarData({ identificador: 'GW-001', data: [sensor] })
+            expect(result.success).toBe(true)
+        })
+
+        it('acepta data.ambiente como undefined (se resolverá vía proveedor externo)', () => {
+            const sensor = { ...sensorValido(), data: { temperatura: -18.5 } }
+            const result = evaluarData({ identificador: 'GW-001', data: [sensor] })
+            expect(result.success).toBe(true)
         })
 
         it('acepta payload sin campo humedad (campo opcional)', () => {

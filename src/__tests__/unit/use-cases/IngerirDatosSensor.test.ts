@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { IngerirDatosSensor } from '../../../modules/monitoring/application/use-cases/IngerirDatosSensor.js'
-import { EntityNotFoundError, DomainError } from '../../../shared/domain/DomainError.js'
+import { EntityNotFoundError } from '../../../shared/domain/DomainError.js'
 import type { IDataRepository, ComandoIngesta } from '../../../modules/monitoring/domain/repositories.js'
+import type { IAmbienteProvider } from '../../../modules/monitoring/domain/ports/IAmbienteProvider.js'
 import { EventBus } from '../../../shared/infrastructure/EventBus.js'
 
 // ─── Fakes / Mocks ───────────────────────────────────────────────────────────
+
+const crearAmbienteProviderFake = (): IAmbienteProvider => ({
+    obtenerAmbiente: vi.fn().mockResolvedValue(28.5),
+})
 
 /**
  * Repositorio falso que implementa IDataRepository.
@@ -52,6 +57,7 @@ const comandoValido = (): ComandoIngesta => ({
 describe('IngerirDatosSensor - use case de ingesta IoT', () => {
     let repo: IDataRepository
     let eventBus: EventBus
+    let ambienteProvider: IAmbienteProvider
     let useCase: IngerirDatosSensor
 
     beforeEach(() => {
@@ -61,7 +67,8 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
         vi.spyOn(eventBus, 'publish').mockResolvedValue(undefined)
 
         repo = crearRepoFake()
-        useCase = new IngerirDatosSensor(repo, eventBus)
+        ambienteProvider = crearAmbienteProviderFake()
+        useCase = new IngerirDatosSensor(repo, eventBus, ambienteProvider)
     })
 
     // ── Happy Path ──────────────────────────────────────────────────────────
@@ -77,11 +84,16 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
             })
         })
 
-        it('retorna un array con el resultado de cada sensor procesado', async () => {
+        it('retorna guardados con el resultado de cada sensor procesado', async () => {
             const resultado = await useCase.execute(comandoValido())
-            expect(resultado).toHaveLength(1)
-            expect(resultado[0]).toHaveProperty('data')
-            expect(resultado[0]).toHaveProperty('infoEstatus')
+            expect(resultado.guardados).toHaveLength(1)
+            expect(resultado.guardados[0]).toHaveProperty('data')
+            expect(resultado.guardados[0]).toHaveProperty('infoEstatus')
+        })
+
+        it('retorna noRegistrados vacío cuando todos los sensores están registrados', async () => {
+            const resultado = await useCase.execute(comandoValido())
+            expect(resultado.noRegistrados).toHaveLength(0)
         })
 
         it('busca el gateway por identificador exacto', async () => {
@@ -117,7 +129,8 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
             })
 
             const resultado = await useCase.execute(comando)
-            expect(resultado).toHaveLength(2)
+            expect(resultado.guardados).toHaveLength(2)
+            expect(resultado.noRegistrados).toHaveLength(0)
         })
 
         it('publica un evento por cada sensor procesado', async () => {
@@ -178,9 +191,9 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
         })
     })
 
-    // ── Error Path: Dispositivo ─────────────────────────────────────────────
+    // ── Sensores no registrados ─────────────────────────────────────────────
 
-    describe('cuando el dispositivo no existe', () => {
+    describe('cuando un sensor no está registrado', () => {
         beforeEach(() => {
             vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
             vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
@@ -190,30 +203,14 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
             })
         })
 
-        it('lanza DomainError con code DISPOSITIVO_NO_ENCONTRADO', async () => {
-            try {
-                await useCase.execute(comandoValido())
-                expect.fail('debería haber lanzado un error')
-            } catch (err) {
-                expect(err).toBeInstanceOf(DomainError)
-                expect((err as DomainError).code).toBe('DISPOSITIVO_NO_ENCONTRADO')
-            }
+        it('no lanza error — devuelve el identificador en noRegistrados', async () => {
+            const resultado = await useCase.execute(comandoValido())
+            expect(resultado.noRegistrados).toContain('00:1A:2B:3C:4D:5E')
         })
 
-        it('el error tiene httpStatus 404', async () => {
-            try {
-                await useCase.execute(comandoValido())
-            } catch (err) {
-                expect((err as DomainError).httpStatus).toBe(404)
-            }
-        })
-
-        it('el mensaje incluye el identificador del sensor', async () => {
-            try {
-                await useCase.execute(comandoValido())
-            } catch (err) {
-                expect((err as DomainError).message).toContain('00:1A:2B:3C:4D:5E')
-            }
+        it('guardados queda vacío cuando ningún sensor está registrado', async () => {
+            const resultado = await useCase.execute(comandoValido())
+            expect(resultado.guardados).toHaveLength(0)
         })
 
         it('NO llama a persistirLectura si el dispositivo no existe', async () => {
@@ -225,8 +222,140 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
                 return fn(txRepo)
             })
 
-            await expect(useCase.execute(comandoValido())).rejects.toThrow()
+            await useCase.execute(comandoValido())
             expect(persistirLecturaMock!).not.toHaveBeenCalled()
+        })
+
+        it('NO publica eventos para sensores no registrados', async () => {
+            await useCase.execute(comandoValido())
+            const eventosPublicados = vi.mocked(eventBus.publish).mock.calls[0][0]
+            expect(eventosPublicados).toHaveLength(0)
+        })
+    })
+
+    describe('éxito parcial — mezcla de sensores registrados y no registrados', () => {
+        it('guarda los registrados e ignora los no registrados', async () => {
+            vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
+
+            const sensorRegistrado = sensorPayload()
+            const sensorNoRegistrado = { ...sensorPayload(), identificador: 'FF:FF:FF:FF:FF:FF' }
+
+            vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
+                const txRepo = crearRepoFake()
+                vi.mocked(txRepo.buscarDispositivoPorIdentificadorYGateway).mockImplementation(
+                    async (id) => id === sensorRegistrado.identificador ? dispositivoFake : null
+                )
+                vi.mocked(txRepo.persistirLectura).mockResolvedValue(lecturaFake)
+                return fn(txRepo)
+            })
+
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [sensorRegistrado, sensorNoRegistrado],
+            }
+
+            const resultado = await useCase.execute(comando)
+
+            expect(resultado.guardados).toHaveLength(1)
+            expect(resultado.noRegistrados).toEqual(['FF:FF:FF:FF:FF:FF'])
+        })
+
+        it('publica eventos solo para los sensores guardados', async () => {
+            vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
+
+            const sensorRegistrado = sensorPayload()
+            const sensorNoRegistrado = { ...sensorPayload(), identificador: 'FF:FF:FF:FF:FF:FF' }
+
+            vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
+                const txRepo = crearRepoFake()
+                vi.mocked(txRepo.buscarDispositivoPorIdentificadorYGateway).mockImplementation(
+                    async (id) => id === sensorRegistrado.identificador ? dispositivoFake : null
+                )
+                vi.mocked(txRepo.persistirLectura).mockResolvedValue(lecturaFake)
+                return fn(txRepo)
+            })
+
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [sensorRegistrado, sensorNoRegistrado],
+            }
+
+            await useCase.execute(comando)
+
+            const eventosPublicados = vi.mocked(eventBus.publish).mock.calls[0][0]
+            expect(eventosPublicados).toHaveLength(1)
+        })
+    })
+
+    // ── Resolución de ambiente ──────────────────────────────────────────────
+
+    describe('resolución de temperatura ambiente', () => {
+        beforeEach(() => {
+            vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
+            vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
+                const txRepo = crearRepoFake()
+                vi.mocked(txRepo.buscarDispositivoPorIdentificadorYGateway).mockResolvedValue(dispositivoFake)
+                vi.mocked(txRepo.persistirLectura).mockResolvedValue(lecturaFake)
+                return fn(txRepo)
+            })
+        })
+
+        it('usa el ambiente del sensor cuando viene en el payload', async () => {
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [{ ...sensorPayload(), data: { temperatura: -18.5, ambiente: 22.3 } }],
+            }
+
+            await useCase.execute(comando)
+
+            const txRepo = crearRepoFake()
+            vi.mocked(txRepo.persistirLectura)
+            expect(ambienteProvider.obtenerAmbiente).not.toHaveBeenCalled()
+        })
+
+        it('consulta el provider cuando ambiente es null', async () => {
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [{ ...sensorPayload(), data: { temperatura: -18.5, ambiente: null } }],
+            }
+
+            await useCase.execute(comando)
+
+            expect(ambienteProvider.obtenerAmbiente).toHaveBeenCalledOnce()
+        })
+
+        it('consulta el provider cuando ambiente es undefined', async () => {
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [{ ...sensorPayload(), data: { temperatura: -18.5 } }],
+            }
+
+            await useCase.execute(comando)
+
+            expect(ambienteProvider.obtenerAmbiente).toHaveBeenCalledOnce()
+        })
+
+        it('usa 0 como fallback si no hay provider y ambiente no viene', async () => {
+            const useCaseSinProvider = new IngerirDatosSensor(repo, eventBus)
+            let ambientePersistido: number | undefined
+
+            vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
+                const txRepo = crearRepoFake()
+                vi.mocked(txRepo.buscarDispositivoPorIdentificadorYGateway).mockResolvedValue(dispositivoFake)
+                vi.mocked(txRepo.persistirLectura).mockImplementation(async (params) => {
+                    ambientePersistido = params.ambiente as number
+                    return lecturaFake
+                })
+                return fn(txRepo)
+            })
+
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [{ ...sensorPayload(), data: { temperatura: -18.5, ambiente: null } }],
+            }
+
+            await useCaseSinProvider.execute(comando)
+            expect(ambientePersistido).toBe(0)
         })
     })
 
