@@ -1,0 +1,105 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ── 1. Tests ─────────────────────────────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test
+
+  # ── 2. Build frontend + Deploy ───────────────────────────────────────────────
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      # Checkout del backend
+      - uses: actions/checkout@v4
+
+      # Checkout del frontend (repo separado)
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.FRONT_REPO }}
+          token: ${{ secrets.GH_PAT }}
+          path: _front
+
+      # pnpm + Node para compilar el frontend
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'pnpm'
+          cache-dependency-path: _front/pnpm-lock.yaml
+
+      - name: Instalar dependencias del frontend
+        run: pnpm install --frozen-lockfile
+        working-directory: _front
+
+      - name: Compilar frontend
+        run: pnpm build
+        working-directory: _front
+
+      # Empacar para transferencia
+      - name: Empacar backend
+        run: tar --exclude='node_modules' --exclude='.env' --exclude='.git' --exclude='_front' -czf backend.tar.gz .
+
+      - name: Empacar dist del frontend
+        run: tar -czf frontend.tar.gz -C _front/dist .
+
+      # Copiar tars al EC2
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend.tar.gz,frontend.tar.gz"
+          target: "~/"
+
+      # Extraer + levantar con docker compose
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "=== Extrayendo archivos ==="
+            mkdir -p ~/app/backend ~/app/front/dist
+            tar -xzf ~/backend.tar.gz  -C ~/app/backend
+            tar -xzf ~/frontend.tar.gz -C ~/app/front/dist
+            rm -f ~/backend.tar.gz ~/frontend.tar.gz
+
+            echo "=== Verificando .env ==="
+            if [ ! -f ~/app/backend/.env ]; then
+              echo "ERROR: ~/app/backend/.env no existe en el servidor."
+              echo "Crea el archivo manualmente antes del primer deploy (ver README de deploy)."
+              exit 1
+            fi
+
+            echo "=== Desplegando con Docker Compose ==="
+            cd ~/app/backend
+            docker compose -f deploy/docker-compose.prod.yml up -d --build --remove-orphans
+
+            echo "=== Estado final ==="
+            docker compose -f deploy/docker-compose.prod.yml ps
