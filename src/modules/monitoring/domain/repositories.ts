@@ -9,11 +9,11 @@ export interface DatosSensor {
     signal: {
         bateria: number;
         rssi: number;
-        snr: number;
+        snr?: number | null;
     };
     data: {
         temperatura: number;
-        ambiente: number;
+        ambiente?: number | null;
         humedad?: number | null;
     };
 }

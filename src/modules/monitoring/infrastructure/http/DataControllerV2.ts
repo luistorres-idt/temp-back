@@ -6,6 +6,7 @@ import { evaluarData } from "../../../../schemas/data.js";
 import { IngerirDatosSensor } from "../../application/use-cases/IngerirDatosSensor.js";
 import { PrismaDataRepository } from "../persistence/PrismaDataRepository.js";
 import { EventBus } from "../../../../shared/infrastructure/EventBus.js";
+import { OpenWeatherAmbienteProvider } from "../ambient/OpenWeatherAmbienteProvider.js";
 
 /**
  * Controller DDD para ingesta de datos IoT.
@@ -24,11 +25,11 @@ export class DataControllerV2 {
         this.ingerirDatosSensor = new IngerirDatosSensor(
             new PrismaDataRepository(),
             EventBus.getInstance(),
+            new OpenWeatherAmbienteProvider(),
         );
     }
 
     crearElemento = async (req: AppRequest, res: Response): Promise<void> => {
-        console.log(req.body);
         const result = evaluarData(req.body);
 
         if (!result.success) {
@@ -39,15 +40,27 @@ export class DataControllerV2 {
         try {
             const { identificador, data: sensores } = result.data;
 
-            const resultados = await this.ingerirDatosSensor.execute({
+            const { guardados, noRegistrados } = await this.ingerirDatosSensor.execute({
                 identificadorGateway: identificador,
                 sensores,
             });
-
-            res.status(201).json({
-                mensaje: MENSAJE_EXITO.CREACION,
-                data: resultados,
-            });
+            if (noRegistrados.length === 0) {
+                res.status(201).json({
+                    mensaje: MENSAJE_EXITO.CREACION,
+                    data: guardados,
+                });
+            } else if (guardados.length === 0) {
+                res.status(404).json({
+                    error: "Ningún sensor del listado está registrado en el sistema",
+                    noRegistrados,
+                });
+            } else {
+                res.status(207).json({
+                    mensaje: "Datos procesados parcialmente. Algunos sensores no están registrados en el sistema",
+                    data: guardados,
+                    noRegistrados,
+                });
+            }
         } catch (err) {
             if (DomainError.isDomainError(err)) {
                 res.status(err.httpStatus).json({ error: err.message });
