@@ -12,6 +12,7 @@ import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js"
 import type { Application } from "express";
 // [DDD] Event handler del bounded context Monitoring
 import { OnTelemetriaRecibida } from "./modules/monitoring/application/event-handlers/OnTelemetriaRecibida.js";
+import { iniciarReporteCron } from "./jobs/reporteDiario.js";
 
 const app: Application = express();
 const httpServer = createServer(app);
@@ -65,6 +66,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 // Iniciar servidor
 httpServer.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}\n`);
+    iniciarReporteCron();
 });
 
 export default app;

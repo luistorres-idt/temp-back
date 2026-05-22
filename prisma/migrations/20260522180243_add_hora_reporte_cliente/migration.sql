@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Cliente` ADD COLUMN `horaReporte` VARCHAR(191) NOT NULL DEFAULT '00:05';
