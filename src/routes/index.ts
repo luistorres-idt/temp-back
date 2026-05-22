@@ -17,6 +17,7 @@ import { InfoEstatusController } from "../controllers/infoEstatus.js";
 // [DDD] Bounded Context: Monitoring
 import { DataControllerV2 } from "../modules/monitoring/infrastructure/http/DataControllerV2.js";
 import { CongeladoresControllerV2 } from "../modules/monitoring/infrastructure/http/CongeladoresControllerV2.js";
+import { ReportesController } from "../controllers/reportes.js";
 import { AutenticacionMiddleware } from "../middlewares/autenticacion/autenticacion.js";
 import {
     QueryClientesMiddleware,
@@ -25,6 +26,7 @@ import {
     QueryCongeladoresMiddleware,
     QueryDispositivosMiddleware,
     QueryUsuariosMiddleware,
+    QueryGatewaysMiddleware,
 } from "../middlewares/query.js";
 
 export class AppRouter {
@@ -36,7 +38,6 @@ export class AppRouter {
         // Definidas antes del middleware de auth global de app.ts
         // ----------------------------------------------------------------
         router.use("/api/autenticacion", crearRouterAutenticacion());
-        router.use("/api/usuarios", QueryUsuariosMiddleware.execute, crearRouterCRUD(new UsuariosController()));
 
 
         // Ingesta de data desde dispositivos IoT (sin token de usuario)
@@ -59,6 +60,7 @@ export class AppRouter {
         router.use("/api/modulos", crearRouterCRUD(new ModulosController()));
         router.use("/api/operaciones", crearRouterCRUD(new OperacionesController()));
         router.use("/api/perfiles", crearRouterCRUD(new PerfilesController()));
+        router.use("/api/usuarios", QueryUsuariosMiddleware.execute, crearRouterCRUD(new UsuariosController()));
         router.use("/api/clientes", QueryClientesMiddleware.execute, crearRouterCRUD(new ClientesController()));
         router.use("/api/sucursales", QuerySucursalesMiddleware.execute, crearRouterCRUD(new SucursalesController()));
         router.use("/api/secciones", QuerySeccionesMiddleware.execute, crearRouterCRUD(new SeccionesController()));
@@ -69,12 +71,17 @@ export class AppRouter {
         // [legacy] CRUD de congeladores aun usa el controller anterior
         const congeladoresController = new CongeladoresController();
         router.use("/api/congeladores", QueryCongeladoresMiddleware.execute, crearRouterCRUD(congeladoresController));
-        router.use("/api/gateways", crearRouterCRUD(new GatewaysController()));
+        router.use("/api/gateways", QueryGatewaysMiddleware.execute, crearRouterCRUD(new GatewaysController()));
         router.use("/api/dispositivos", QueryDispositivosMiddleware.execute, crearRouterCRUD(new DispositivosController()));
 
         // [legacy] GET y PATCH de data protegidos — pendiente de migrar
         router.use("/api/data", crearRouterCRUD(dataController));
         router.use("/api/info-estatus", crearRouterCRUD(new InfoEstatusController()));
+
+        // Reportes: resumen diario + exportación Excel por sucursal
+        const reportesController = new ReportesController();
+        router.post("/api/reportes/sucursales/:id/calcular", reportesController.calcularResumen);
+        router.get("/api/reportes/sucursales/:id/excel", reportesController.generarExcel);
 
         return router;
     }
