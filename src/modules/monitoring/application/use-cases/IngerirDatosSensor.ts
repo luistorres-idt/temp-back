@@ -52,15 +52,22 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             throw new EntityNotFoundError("Gateway", comando.identificadorGateway);
         }
 
-        // 2. Procesar sensores en transaccion — sensores no registrados se omiten
+        // Obtener la temperatura ambiente una sola vez si algún sensor en el lote la necesita
+        let ambienteComun = 0;
+        const algunSensorNecesitaAmbiente = comando.sensores.some(
+            (sensor) => sensor.data.ambiente === undefined || sensor.data.ambiente === null
+        );
+        if (algunSensorNecesitaAmbiente) {
+            ambienteComun = await this.resolverAmbiente();
+        }
+
+        // 2. Procesar sensores en transaccion en paralelo — sensores no registrados se omiten
         const procesados = await this.dataRepository.ejecutarEnTransaccion(async (txRepo) => {
-            const resultados: ResultadoProcesamiento[] = [];
-
-            for (const sensor of comando.sensores) {
-                resultados.push(await this.procesarSensor(txRepo, sensor, gateway.id));
-            }
-
-            return resultados;
+            return Promise.all(
+                comando.sensores.map((sensor) =>
+                    this.procesarSensor(txRepo, sensor, gateway.id, ambienteComun)
+                )
+            );
         });
 
         // 3. Separar exitosos de no registrados
@@ -77,8 +84,10 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             }
         }
 
-        // 4. Publicar eventos solo de los sensores guardados
-        await this.eventBus.publish(eventosAPublicar);
+        // 4. Publicar eventos solo de los sensores guardados en segundo plano sin bloquear
+        this.eventBus.publish(eventosAPublicar).catch((err) => {
+            console.error("[EventBus] Error publicando eventos en background:", err);
+        });
 
         return { guardados, noRegistrados };
     }
@@ -87,6 +96,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         repo: IDataRepository,
         sensor: DatosSensor,
         idGateway: number,
+        ambienteComun: number,
     ): Promise<ResultadoProcesamiento> {
         const dispositivo = await repo.buscarDispositivoPorIdentificadorYGateway(
             sensor.identificador,
@@ -97,7 +107,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             return { tipo: "no_registrado", identificador: sensor.identificador };
         }
 
-        const ambiente = sensor.data.ambiente ?? await this.resolverAmbiente();
+        const ambiente = sensor.data.ambiente ?? ambienteComun;
 
         const resultado = await repo.persistirLectura({
             temperatura: sensor.data.temperatura,

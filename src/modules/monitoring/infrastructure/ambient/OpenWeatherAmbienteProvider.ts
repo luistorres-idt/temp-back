@@ -16,6 +16,7 @@ export class OpenWeatherAmbienteProvider implements IAmbienteProvider {
     private readonly TTL_MS = 10 * 60 * 1000;
     private readonly cache = new Map<string, CacheEntry>();
     private readonly pendingRefresh = new Set<string>();
+    private readonly activeFetches = new Map<string, Promise<number>>();
 
     async obtenerAmbiente(ciudad?: string): Promise<number> {
         const city = ciudad ?? this.CIUDAD_DEFAULT;
@@ -28,8 +29,19 @@ export class OpenWeatherAmbienteProvider implements IAmbienteProvider {
             return cached.temperatura;
         }
 
-        // Sin caché: primer fetch, bloqueante (ocurre una sola vez por ciudad)
-        return this.fetchYCachear(city);
+        const activeFetch = this.activeFetches.get(city);
+        if (activeFetch) {
+            return activeFetch;
+        }
+
+        const promise = this.fetchYCachear(city);
+        this.activeFetches.set(city, promise);
+
+        try {
+            return await promise;
+        } finally {
+            this.activeFetches.delete(city);
+        }
     }
 
     private estaViciada(entry: CacheEntry): boolean {
