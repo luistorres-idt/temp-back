@@ -64,12 +64,16 @@ export const ResumenDiarioModel = {
     }): Promise<ResumenDiarioResponse> {
         const { inicio, fin } = parsearFecha(fecha);
 
+        const dispositivos = await prisma.dispositivo.findMany({
+            where: { congelador: { seccion: { idSucursal } }, estatus: true },
+            select: { id: true },
+        });
+        const idsDispositivos = dispositivos.map((d) => d.id);
+
         const datos = await prisma.data.findMany({
             where: {
                 creado: { gte: inicio, lte: fin },
-                dispositivo: {
-                    congelador: { seccion: { sucursal: { id: idSucursal } } },
-                },
+                idDispositivo: { in: idsDispositivos },
             },
             select: { temperatura: true },
         });
@@ -118,12 +122,16 @@ export const ResumenDiarioModel = {
             creadoFilter.lte = fin;
         }
 
+        const dispositivos = await prisma.dispositivo.findMany({
+            where: { congelador: { seccion: { idSucursal } }, estatus: true },
+            select: { id: true },
+        });
+        const idsDispositivos = dispositivos.map((d) => d.id);
+
         const datos = await prisma.data.findMany({
             where: {
                 ...(Object.keys(creadoFilter).length > 0 ? { creado: creadoFilter } : {}),
-                dispositivo: {
-                    congelador: { seccion: { sucursal: { id: idSucursal } } },
-                },
+                idDispositivo: { in: idsDispositivos },
             },
             select: {
                 temperatura: true,
@@ -207,12 +215,16 @@ export const ResumenDiarioModel = {
     }): Promise<SeccionDatos[]> {
         const { inicio, fin } = parsearFecha(fecha);
 
+        const dispositivos = await prisma.dispositivo.findMany({
+            where: { congelador: { seccion: { idSucursal } }, estatus: true },
+            select: { id: true },
+        });
+        const idsDispositivos = dispositivos.map((d) => d.id);
+
         const datos = await prisma.data.findMany({
             where: {
                 creado: { gte: inicio, lte: fin },
-                dispositivo: {
-                    congelador: { seccion: { sucursal: { id: idSucursal } } },
-                },
+                idDispositivo: { in: idsDispositivos },
             },
             select: {
                 temperatura: true,

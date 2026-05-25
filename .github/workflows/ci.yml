@@ -37,6 +37,11 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: Generar cliente Prisma
+        run: pnpm prisma generate
+        env:
+          DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+
       - name: Ejecutar tests con cobertura
         run: pnpm test:coverage
 

@@ -178,6 +178,8 @@ model Data {
   estatus       Boolean     @default(true)
   idDispositivo Int
   dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+
+  @@index([idDispositivo, creado])
 }
 
 model InfoEstatus {
@@ -192,4 +194,6 @@ model InfoEstatus {
   gateway       Gateway     @relation(fields: [idGateway], references: [id])
   idDispositivo Int
   dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+
+  @@index([idDispositivo, creado])
 }

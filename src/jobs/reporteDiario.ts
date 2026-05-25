@@ -74,66 +74,73 @@ export async function ejecutarReporteDiario(fechaOverride?: string) {
 
     if (clientes.length === 0 && !fechaOverride) return;
 
+    const tareas: Promise<void>[] = [];
+
     for (const cliente of clientes) {
         for (const sucursal of cliente.sucursales) {
-            const correosSet = new Set([
-                ...cliente.usuarios.map((u) => u.correo),
-                ...sucursal.usuarios.map((u) => u.correo),
-            ]);
-            const destinatarios = Array.from(correosSet);
-
-            if (destinatarios.length === 0) {
-                console.warn(`[reporteDiario] Sin usuarios — ${sucursal.nombre}, omitiendo`);
-                continue;
-            }
-
-            try {
-                await ResumenDiarioModel.calcularYGuardar({ idSucursal: sucursal.id, fecha });
-
-                const [secciones, seccionesDatos] = await Promise.all([
-                    ResumenDiarioModel.obtenerJerarquiaConResumen({
-                        idSucursal: sucursal.id,
-                        fechaInicio: fecha,
-                        fechaFin: fecha,
-                    }),
-                    ResumenDiarioModel.obtenerDatosDiaDesglosado({ idSucursal: sucursal.id, fecha, timezone: CRON_TIMEZONE }),
+            const tarea = (async () => {
+                const correosSet = new Set([
+                    ...cliente.usuarios.map((u) => u.correo),
+                    ...sucursal.usuarios.map((u) => u.correo),
                 ]);
+                const destinatarios = Array.from(correosSet);
 
-                const buffer = await generarReporteExcel({
-                    sucursalNombre: sucursal.nombre,
-                    secciones,
-                    seccionesDatos,
-                    fechaDia: fecha,
-                });
-
-                const nombreArchivo = `reporte-${sucursal.nombre.replace(/\s+/g, "-")}-${fecha}.xlsx`;
-
-                await transporter.sendMail({
-                    from: `"Sistema Cadena de Frío" <${GMAIL_USER}>`,
-                    to: destinatarios.join(", "),
-                    subject: `Reporte de temperatura — ${sucursal.nombre} — ${fecha}`,
-                    html: `
-                        <p>Hola,</p>
-                        <p>Adjunto encontrarás el reporte de temperatura del <strong>${fecha}</strong> para la sucursal <strong>${sucursal.nombre}</strong>.</p>
-                        <p style="color:#666;font-size:12px;">Este correo fue generado automáticamente por el Sistema Cadena de Frío.</p>
-                    `,
-                    attachments: [{
-                        filename: nombreArchivo,
-                        content: buffer,
-                        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    }],
-                });
-
-                console.log(`[reporteDiario] ✓ ${sucursal.nombre} → ${destinatarios.join(", ")}`);
-            } catch (err) {
-                if (err instanceof Error && err.message === "SIN_DATOS") {
-                    console.warn(`[reporteDiario] Sin datos: ${sucursal.nombre} — ${fecha}`);
-                } else {
-                    console.error(`[reporteDiario] ✗ Error en ${sucursal.nombre}:`, err);
+                if (destinatarios.length === 0) {
+                    console.warn(`[reporteDiario] Sin usuarios — ${sucursal.nombre}, omitiendo`);
+                    return;
                 }
-            }
+
+                try {
+                    await ResumenDiarioModel.calcularYGuardar({ idSucursal: sucursal.id, fecha });
+
+                    const [secciones, seccionesDatos] = await Promise.all([
+                        ResumenDiarioModel.obtenerJerarquiaConResumen({
+                            idSucursal: sucursal.id,
+                            fechaInicio: fecha,
+                            fechaFin: fecha,
+                        }),
+                        ResumenDiarioModel.obtenerDatosDiaDesglosado({ idSucursal: sucursal.id, fecha, timezone: CRON_TIMEZONE }),
+                    ]);
+
+                    const buffer = await generarReporteExcel({
+                        sucursalNombre: sucursal.nombre,
+                        secciones,
+                        seccionesDatos,
+                        fechaDia: fecha,
+                    });
+
+                    const nombreArchivo = `reporte-${sucursal.nombre.replace(/\s+/g, "-")}-${fecha}.xlsx`;
+
+                    await transporter.sendMail({
+                        from: `"Sistema Cadena de Frío" <${GMAIL_USER}>`,
+                        to: destinatarios.join(", "),
+                        subject: `Reporte de temperatura — ${sucursal.nombre} — ${fecha}`,
+                        html: `
+                            <p>Hola,</p>
+                            <p>Adjunto encontrarás el reporte de temperatura del <strong>${fecha}</strong> para la sucursal <strong>${sucursal.nombre}</strong>.</p>
+                            <p style="color:#666;font-size:12px;">Este correo fue generado automáticamente por el Sistema Cadena de Frío.</p>
+                        `,
+                        attachments: [{
+                            filename: nombreArchivo,
+                            content: buffer,
+                            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        }],
+                    });
+
+                    console.log(`[reporteDiario] ✓ ${sucursal.nombre} → ${destinatarios.join(", ")}`);
+                } catch (err) {
+                    if (err instanceof Error && err.message === "SIN_DATOS") {
+                        console.warn(`[reporteDiario] Sin datos: ${sucursal.nombre} — ${fecha}`);
+                    } else {
+                        console.error(`[reporteDiario] ✗ Error en ${sucursal.nombre}:`, err);
+                    }
+                }
+            })();
+            tareas.push(tarea);
         }
     }
+
+    await Promise.all(tareas);
 
     console.log(`[reporteDiario] Finalizado — ${fecha}`);
 }
