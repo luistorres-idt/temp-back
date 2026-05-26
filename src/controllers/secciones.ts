@@ -23,32 +23,24 @@ export class SeccionesController extends BaseController {
             const dispositivos = congelador.dispositivos ?? [];
             congelador.dispositivosTotales = dispositivos.length;
 
-            // Dispositivos activos = los que tienen datos en las ultimas 24h
             const activos = dispositivos.filter(d => d.data && d.data.length > 0);
             congelador.dispositivosActivos = activos.length;
 
             if (activos.length > 0) {
-                // Promedio global: todos los registros de todos los dispositivos activos
-                let sumTemp = 0;
-                let sumAmbiente = 0;
-                let totalRegistros = 0;
-                let fechaMasReciente: Date | null = null;
+                const temps     = activos.map(d => d.data[0].temperatura);
+                const ambientes = activos.map(d => d.data[0].ambiente);
 
-                activos.forEach((dispositivo) => {
-                    const lecturaActual = dispositivo.data[0];
-                    sumTemp += lecturaActual.temperatura;
-                    sumAmbiente += lecturaActual.ambiente;
-                    totalRegistros++;
-                    
-                    // Conservar la lectura mas reciente entre todos los dispositivos
-                    if (!fechaMasReciente || lecturaActual.creado > fechaMasReciente) {
-                        fechaMasReciente = lecturaActual.creado;
+                congelador.temperaturaPromedio = mediana(temps);
+                congelador.ambientePromedio    = mediana(ambientes);
+
+                let fechaMasReciente: Date | null = null;
+                activos.forEach((d) => {
+                    const creado = d.data[0].creado;
+                    if (!fechaMasReciente || creado > fechaMasReciente) {
+                        fechaMasReciente = creado;
                     }
                 });
-
-                congelador.temperaturaPromedio = Number((sumTemp / totalRegistros).toFixed(1));
-                congelador.ambientePromedio    = Number((sumAmbiente / totalRegistros).toFixed(1));
-                congelador.ultimaLectura       = fechaMasReciente;
+                congelador.ultimaLectura = fechaMasReciente;
             } else {
                 congelador.temperaturaPromedio = null;
                 congelador.ambientePromedio    = null;
@@ -118,4 +110,13 @@ export class SeccionesController extends BaseController {
             res.status(400).json({ error: MENSAJE_ERROR.CREACION });
         }
     };
+}
+
+function mediana(valores: number[]): number {
+    const sorted = [...valores].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const val = sorted.length % 2 !== 0
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+    return Number(val.toFixed(1));
 }

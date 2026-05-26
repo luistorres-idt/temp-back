@@ -77,25 +77,43 @@ model Usuario {
 }
 
 model Cliente {
-  id          Int        @id @default(autoincrement())
-  nombre      String
-  creado      DateTime   @default(now())
-  actualizado DateTime   @updatedAt
-  estatus     Boolean    @default(true)
-  usuarios    Usuario[]
-  sucursales  Sucursal[]
+  id           Int        @id @default(autoincrement())
+  nombre       String
+  horaReporte  Int        @default(0)
+  creado       DateTime   @default(now())
+  actualizado  DateTime   @updatedAt
+  estatus      Boolean    @default(true)
+  usuarios     Usuario[]
+  sucursales   Sucursal[]
 }
 
 model Sucursal {
-  id          Int       @id @default(autoincrement())
-  nombre      String
-  creado      DateTime  @default(now())
-  actualizado DateTime  @updatedAt
-  estatus     Boolean   @default(true)
-  idCliente   Int
-  cliente     Cliente   @relation(fields: [idCliente], references: [id])
-  usuarios    Usuario[]
-  secciones   Seccion[]
+  id            Int             @id @default(autoincrement())
+  nombre        String
+  creado        DateTime        @default(now())
+  actualizado   DateTime        @updatedAt
+  estatus       Boolean         @default(true)
+  idCliente     Int
+  cliente       Cliente         @relation(fields: [idCliente], references: [id])
+  usuarios      Usuario[]
+  secciones     Seccion[]
+  resumenDiario ResumenDiario[]
+}
+
+model ResumenDiario {
+  id            Int      @id @default(autoincrement())
+  fecha         DateTime
+  tempMax       Float
+  tempMin       Float
+  tempMedia     Float
+  tempMediana   Float
+  totalLecturas Int
+  creado        DateTime @default(now())
+  actualizado   DateTime @updatedAt
+  idSucursal    Int
+  sucursal      Sucursal @relation(fields: [idSucursal], references: [id])
+
+  @@unique([idSucursal, fecha])
 }
 
 model Seccion {
@@ -160,6 +178,8 @@ model Data {
   estatus       Boolean     @default(true)
   idDispositivo Int
   dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+
+  @@index([idDispositivo, creado])
 }
 
 model InfoEstatus {
@@ -174,4 +194,6 @@ model InfoEstatus {
   gateway       Gateway     @relation(fields: [idGateway], references: [id])
   idDispositivo Int
   dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+
+  @@index([idDispositivo, creado])
 }

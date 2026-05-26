@@ -279,3 +279,47 @@ export class QueryUsuariosMiddleware {
   }
 }
 
+/**
+ * Gateways:
+ * - Superusuario: sin restricciones.
+ * - Con sucursal fija: solo gateways en secciones de esa sucursal.
+ * - Con cliente: gateways cuya sección->sucursal pertenezca a ese cliente.
+ */
+export class QueryGatewaysMiddleware {
+  static execute(req: AppRequest, _res: Response, next: NextFunction): void {
+    const { usuario, where } = req;
+    if (!usuario || !where) return next();
+
+    const perfilNombre = usuario.perfil?.nombre ?? "";
+    const idCliente = usuario.cliente?.id;
+    const idSucursal = usuario.sucursal?.id;
+
+    if (perfilNombre === PERFILES.SUPERUSUARIO) return next();
+
+    const filtroSeccion = where["seccion"];
+    delete where["seccion"];
+
+    if (idSucursal) {
+      if (filtroSeccion) {
+        where["seccion"] = {
+          ...(filtroSeccion as any),
+          sucursal: { id: { equals: idSucursal } }
+        };
+      } else {
+        where["seccion"] = { sucursal: { id: { equals: idSucursal } } };
+      }
+    } else if (idCliente) {
+      if (filtroSeccion) {
+        where["seccion"] = {
+          ...(filtroSeccion as any),
+          sucursal: { cliente: { id: { equals: idCliente } } }
+        };
+      } else {
+        where["seccion"] = { sucursal: { cliente: { id: { equals: idCliente } } } };
+      }
+    }
+
+    next();
+  }
+}
+

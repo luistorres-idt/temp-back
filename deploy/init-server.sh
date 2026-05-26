@@ -44,5 +44,21 @@ if ! docker compose version &> /dev/null; then
     apt-get install -y docker-compose-plugin
 fi
 
+# 5. Crear estructura de directorios esperada por el workflow de CI/CD
+TARGET_USER="ubuntu"
+APP_DIR="/home/${TARGET_USER}/app"
+if [ ! -d "${APP_DIR}" ]; then
+    echo "[!] Creando estructura ~/app/ para el workflow de deploy..."
+    mkdir -p "${APP_DIR}/front/dist"
+    chown -R "${TARGET_USER}:${TARGET_USER}" "${APP_DIR}"
+    echo "[-] Estructura ~/app/ creada."
+else
+    echo "[-] Directorio ~/app/ ya existe."
+fi
+
 echo "=== Configuración de infraestructura base finalizada ==="
-echo "Nota: Si acabas de instalar Docker, es posible que necesites cerrar tu sesión SSH y volver a entrar para no requerir 'sudo' al usar docker."
+echo ""
+echo "PRÓXIMOS PASOS:"
+echo "  1. Cierra esta sesión SSH y vuelve a entrar (para que el grupo docker surta efecto)"
+echo "  2. Crea el .env de producción: nano ~/app/backend/.env"
+echo "  3. El primer deploy arrancará automáticamente al hacer push a main en GitHub"

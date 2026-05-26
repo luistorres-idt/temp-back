@@ -1,22 +1,28 @@
 import type { UseCase } from "../../../../shared/application/UseCase.js";
 import type { DomainEvent } from "../../../../shared/domain/DomainEvent.js";
-import { DomainError, EntityNotFoundError } from "../../../../shared/domain/DomainError.js";
+import { EntityNotFoundError } from "../../../../shared/domain/DomainError.js";
 import { EventBus } from "../../../../shared/infrastructure/EventBus.js";
 import { telemetriaRecibida } from "../../domain/events/TelemetriaRecibida.js";
+import type { IAmbienteProvider } from "../../domain/ports/IAmbienteProvider.js";
 import type {
     IDataRepository,
     ComandoIngesta,
     DatosSensor,
-    ResultadoIngesta,
 } from "../../domain/repositories.js";
 
-/**
- * DTO de respuesta de la ingesta.
- */
-export interface IngestaResponseDto {
+export interface IngestaItemDto {
     data: object;
     infoEstatus: object;
 }
+
+export interface IngestaResponseDto {
+    guardados: IngestaItemDto[];
+    noRegistrados: string[];
+}
+
+type ResultadoProcesamiento =
+    | { tipo: "exito"; resultado: IngestaItemDto; eventos: DomainEvent[] }
+    | { tipo: "no_registrado"; identificador: string };
 
 /**
  * Use Case: Ingerir datos de sensores IoT.
@@ -29,13 +35,14 @@ export interface IngestaResponseDto {
  *
  * El controller solo traduce HTTP <-> UseCase y devuelve la respuesta.
  */
-export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaResponseDto[]> {
+export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaResponseDto> {
     constructor(
         private readonly dataRepository: IDataRepository,
         private readonly eventBus: EventBus,
+        private readonly ambienteProvider?: IAmbienteProvider,
     ) { }
 
-    async execute(comando: ComandoIngesta): Promise<IngestaResponseDto[]> {
+    async execute(comando: ComandoIngesta): Promise<IngestaResponseDto> {
         // 1. Buscar gateway
         const gateway = await this.dataRepository.buscarGatewayPorIdentificador(
             comando.identificadorGateway,
@@ -45,77 +52,94 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             throw new EntityNotFoundError("Gateway", comando.identificadorGateway);
         }
 
-        // 2. Procesar sensores en transaccion
-        const eventosAPublicar: DomainEvent[] = [];
+        // Obtener la temperatura ambiente una sola vez si algún sensor en el lote la necesita
+        let ambienteComun = 0;
+        const algunSensorNecesitaAmbiente = comando.sensores.some(
+            (sensor) => sensor.data.ambiente === undefined || sensor.data.ambiente === null
+        );
+        if (algunSensorNecesitaAmbiente) {
+            ambienteComun = await this.resolverAmbiente();
+        }
 
-        const resultados = await this.dataRepository.ejecutarEnTransaccion(async (txRepo) => {
-            const registros: IngestaResponseDto[] = [];
-
-            for (const sensor of comando.sensores) {
-                const { resultado, eventos } = await this.procesarSensor(
-                    txRepo,
-                    sensor,
-                    gateway.id,
-                );
-                registros.push(resultado);
-                eventosAPublicar.push(...eventos);
-            }
-
-            return registros;
+        // 2. Procesar sensores en transaccion en paralelo — sensores no registrados se omiten
+        const procesados = await this.dataRepository.ejecutarEnTransaccion(async (txRepo) => {
+            return Promise.all(
+                comando.sensores.map((sensor) =>
+                    this.procesarSensor(txRepo, sensor, gateway.id, ambienteComun)
+                )
+            );
         });
 
-        // 3. Publicar eventos (fuera de la transaccion)
-        await this.eventBus.publish(eventosAPublicar);
+        // 3. Separar exitosos de no registrados
+        const guardados: IngestaItemDto[] = [];
+        const noRegistrados: string[] = [];
+        const eventosAPublicar: DomainEvent[] = [];
 
-        return resultados;
+        for (const p of procesados) {
+            if (p.tipo === "exito") {
+                guardados.push(p.resultado);
+                eventosAPublicar.push(...p.eventos);
+            } else {
+                noRegistrados.push(p.identificador);
+            }
+        }
+
+        // 4. Publicar eventos solo de los sensores guardados en segundo plano sin bloquear
+        this.eventBus.publish(eventosAPublicar).catch((err) => {
+            console.error("[EventBus] Error publicando eventos en background:", err);
+        });
+
+        return { guardados, noRegistrados };
     }
 
     private async procesarSensor(
         repo: IDataRepository,
         sensor: DatosSensor,
         idGateway: number,
-    ): Promise<{ resultado: IngestaResponseDto; eventos: DomainEvent[] }> {
-        // Buscar dispositivo por su MAC/identificador
+        ambienteComun: number,
+    ): Promise<ResultadoProcesamiento> {
         const dispositivo = await repo.buscarDispositivoPorIdentificadorYGateway(
             sensor.identificador,
             idGateway,
         );
 
         if (!dispositivo) {
-            throw new DomainError(
-                "DISPOSITIVO_NO_ENCONTRADO",
-                `Dispositivo con identificador '${sensor.identificador}' no encontrado para el gateway`,
-                404,
-            );
+            return { tipo: "no_registrado", identificador: sensor.identificador };
         }
 
-        // Persistir lectura
+        const ambiente = sensor.data.ambiente ?? ambienteComun;
+
         const resultado = await repo.persistirLectura({
             temperatura: sensor.data.temperatura,
-            ambiente: sensor.data.ambiente,
+            ambiente,
             humedad: sensor.data.humedad ?? null,
             idDispositivo: dispositivo.id,
             bateria: sensor.signal.bateria,
             rssi: sensor.signal.rssi,
-            snr: sensor.signal.snr,
+            snr: sensor.signal.snr ?? 0,
             idGateway,
         });
 
-        // Crear evento de dominio
         const evento = telemetriaRecibida({
             idCongelador: dispositivo.idCongelador,
             idDispositivo: dispositivo.id,
             nombreDispositivo: dispositivo.nombre,
             temperatura: sensor.data.temperatura,
-            ambiente: sensor.data.ambiente,
+            ambiente,
             humedad: sensor.data.humedad ?? null,
             idSucursal: dispositivo.congelador.seccion.sucursal.id,
             timestamp: resultado.data.creado?.toISOString() ?? new Date().toISOString(),
         });
 
         return {
+            tipo: "exito",
             resultado: { data: resultado.data, infoEstatus: resultado.infoEstatus },
             eventos: [evento],
         };
+    }
+
+    private async resolverAmbiente(): Promise<number> {
+        if (!this.ambienteProvider) return 0;
+        return this.ambienteProvider.obtenerAmbiente();
     }
 }

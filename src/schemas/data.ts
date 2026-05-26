@@ -8,12 +8,12 @@ export const DataSchema = z.object({
             signal: z.object({
                 bateria: z.number(),
                 rssi: z.number(),
-                snr: z.number(),
+                snr: z.number().nullish(),
             }),
             data: z.object({
                 temperatura: z.number(),
-                ambiente: z.number(),
-                humedad: z.number().optional(),
+                ambiente: z.number().nullish(),
+                humedad: z.number().nullish(),
             }),
         })
     ),

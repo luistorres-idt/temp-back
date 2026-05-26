@@ -4,7 +4,6 @@ import morgan from "morgan";
 import { PORT } from "./config/settings.js";
 import { CORSMiddleware } from "./middlewares/cors.js";
 import { AutenticacionMiddleware } from "./middlewares/autenticacion/autenticacion.js";
-import { AutorizacionMiddleware } from "./middlewares/autorizacion/autorizacion.js";
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
@@ -13,6 +12,7 @@ import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js"
 import type { Application } from "express";
 // [DDD] Event handler del bounded context Monitoring
 import { OnTelemetriaRecibida } from "./modules/monitoring/application/event-handlers/OnTelemetriaRecibida.js";
+import { iniciarReporteCron } from "./jobs/reporteDiario.js";
 
 const app: Application = express();
 const httpServer = createServer(app);
@@ -59,13 +59,14 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
         console.error(err.message);
         return res.status(500).json({ error: err.message.replace(/\n/g, "") });
     }
-    console.log("Error desconocido");
+    console.error("Error desconocido");
     return res.status(500).json({ error: "Ha ocurrido un error" });
 });
 
 // Iniciar servidor
 httpServer.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}\n`);
+    iniciarReporteCron();
 });
 
 export default app;
