@@ -9,7 +9,7 @@ echo "=== Iniciando configuración del servidor EC2 para Proyecto Temp ==="
 
 # 1. Actualizar sistema e instalar utilidades base
 apt-get update && apt-get upgrade -y
-apt-get install -y git curl htop fallocate
+apt-get install -y git curl htop
 
 # 2. Configurar memoria SWAP (Vital para instancias de bajo costo t3.micro/small)
 # Esto evita el temido Error 137 (OOM - Out of Memory) especialmente en compilaciones de node o mysql
