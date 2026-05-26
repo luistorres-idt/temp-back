@@ -146,9 +146,13 @@ nano ~/app/backend/.env
 Añade los valores correspondientes a tu infraestructura de AWS (especialmente la URL de conexión de RDS):
 
 ```env
+DATABASE_HOST="<endpoint_rds>"
+DATABASE_USER="<usuario_rds>"
+DATABASE_PASSWORD="<password_rds>"
+DATABASE_NAME="<nombre_db>"
+DATABASE_URL="mysql://<usuario_rds>:<password_rds>@<endpoint_rds>:3306/<nombre_db>"
 PORT=3000
 NODE_ENV=production
-DATABASE_URL="mysql://<usuario_rds>:<password_rds>@<endpoint_rds>:3306/<nombre_db>"
 TOKEN_SECRET_KEY="crea_una_frase_muy_larga_y_compleja_aqui"
 TOKEN_ACCESS_TIME="8h"
 TOKEN_REFRESH_TIME="7d"
