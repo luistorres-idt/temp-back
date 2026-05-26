@@ -64,7 +64,9 @@ jobs:
 
       # Empacar para transferencia
       - name: Empacar backend
-        run: tar --exclude='node_modules' --exclude='.env' --exclude='.git' --exclude='_front' --exclude='backend.tar.gz' -czf backend.tar.gz .
+        run: |
+          tar --exclude='node_modules' --exclude='.env' --exclude='.git' --exclude='_front' -czf ../backend.tar.gz .
+          mv ../backend.tar.gz .
 
       - name: Empacar dist del frontend
         run: tar -czf frontend.tar.gz -C _front/dist .
