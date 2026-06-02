@@ -12,6 +12,7 @@ export const gatewaySelect = {
     identificador: true,
     nombre: true,
     estatus: true,
+    tokenHash: true,
     creado: true,
     seccion: {
         select: {

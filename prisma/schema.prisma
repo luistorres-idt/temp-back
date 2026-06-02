@@ -144,6 +144,7 @@ model Gateway {
   id            Int           @id @default(autoincrement())
   identificador String        @unique
   nombre        String
+  tokenHash     String?       @unique
   creado        DateTime      @default(now())
   actualizado   DateTime      @updatedAt
   estatus       Boolean       @default(true)

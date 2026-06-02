@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { Gateway } from "../generated/prisma/index.js";
 
 export interface UsuarioToken {
     id: number;
@@ -16,6 +17,7 @@ export interface UsuarioToken {
 // Usamos intersección en lugar de extends para evitar conflicto con Request.take
 export type AppRequest = Request & {
     usuario?: UsuarioToken;
+    gateway?: Gateway;
     where?: Record<string, unknown>;
     paginacion?: {
         take?: number;
