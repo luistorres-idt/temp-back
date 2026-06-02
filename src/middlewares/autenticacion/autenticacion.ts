@@ -7,7 +7,7 @@ export class AutenticacionMiddleware {
     static execute(req: AppRequest, res: Response, next: NextFunction): void {
         const autenticador = new Autenticador();
 
-        if (req.headers["authorization"]) {
+        if (req.headers["authorization"] || req.query.token) {
             autenticador.establecerAutenticador(new TokenAutenticadorStrategy());
         }
 
