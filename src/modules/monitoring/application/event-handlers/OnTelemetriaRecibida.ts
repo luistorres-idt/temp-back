@@ -2,20 +2,14 @@ import type { DomainEvent } from "../../../../shared/domain/DomainEvent.js";
 import type { TelemetriaRecibidaData } from "../../domain/events/TelemetriaRecibida.js";
 import { TELEMETRIA_RECIBIDA } from "../../domain/events/TelemetriaRecibida.js";
 import { EventBus } from "../../../../shared/infrastructure/EventBus.js";
-import type { Server as SocketIOServer } from "socket.io";
+import { TelemetriaStreamController } from "../../infrastructure/http/TelemetriaStreamController.js";
 
 /**
- * Event Handler: emite telemetria via WebSocket cuando se recibe
+ * Event Handler: emite telemetria via Server-Sent Events (SSE) cuando se recibe
  * un evento de dominio TelemetriaRecibida.
- *
- * Reemplaza la emision directa de `io.to(room).emit(...)` que
- * vivia dentro de DataController.crearElemento.
- *
- * Beneficio: si se necesita agregar otra reaccion ante nueva telemetria
- * (email, alerta, log), se agrega otro handler sin tocar IngerirDatosSensor.
  */
 export class OnTelemetriaRecibida {
-    constructor(private readonly io: SocketIOServer) { }
+    constructor() { }
 
     /**
      * Registra este handler en el EventBus global.
@@ -27,9 +21,8 @@ export class OnTelemetriaRecibida {
 
     private handle = (event: DomainEvent<TelemetriaRecibidaData>): void => {
         const { data } = event;
-        const room = `sucursal:${data.idSucursal}`;
 
-        this.io.to(room).emit("telemetria:nueva", {
+        TelemetriaStreamController.enviarTelemetria({
             idCongelador: data.idCongelador,
             idDispositivo: data.idDispositivo,
             nombreDispositivo: data.nombreDispositivo,
@@ -37,7 +30,7 @@ export class OnTelemetriaRecibida {
             ambiente: data.ambiente,
             humedad: data.humedad,
             timestamp: data.timestamp,
+            idSucursal: data.idSucursal,
         });
-
-    }
+    };
 }

@@ -4,3 +4,4 @@ src/generated
 .vscode/
 dist/
 .agents/
+.env*

@@ -157,10 +157,10 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 |-------|------|-----------|-------------|
 | `identificador` | string | Si | Dirección MAC (o identificador único) del dispositivo/sensor |
 | `signal.bateria` | number | Si | Nivel de batería |
-| `signal.rssi` | int | Si | Intensidad de señal (RSSI) |
-| `signal.snr` | int | Si | Relación señal/ruido (SNR) |
+| `signal.rssi` | number | Si | Intensidad de señal (RSSI) |
+| `signal.snr` | number | No | Relación señal/ruido (SNR) (opcional) |
 | `data.temperatura` | number | Si | Temperatura de la lectura |
-| `data.ambiente` | number | Si | Temperatura ambiente |
+| `data.ambiente` | number | No | Temperatura ambiente (opcional, si se omite se resuelve automáticamente) |
 | `data.humedad` | number | No | Humedad relativa (opcional) |
 
 ### Ejemplo de Body
@@ -221,6 +221,64 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 |--------|-------------|
 | 400 | Datos de validación incorrectos o dispositivo no encontrado |
 | 404 | Gateway no encontrado |
+
+---
+
+## 🎯 Endpoints Especiales
+
+### 1. Telemetría de un Congelador (GET)
+- **Ruta:** `/congeladores/:id/telemetria`
+- **Método:** `GET`
+- **Query Params:**
+  - `modo` (Opcional): `"vivo"` o `"historico"`. Por defecto es `"vivo"`.
+  - `fechaInicio` (Opcional, formato ISO 8601): Fecha de inicio para el modo histórico.
+  - `fechaFin` (Opcional, formato ISO 8601): Fecha de fin para el modo histórico.
+- **Respuesta (200 OK - Modo Vivo):**
+  Devuelve el congelador y sus dispositivos asociados junto con sus últimas lecturas.
+  ```json
+  {
+    "congelador": { "id": 5, "nombre": "Congelador 5" },
+    "dispositivos": [
+      {
+        "id": 12,
+        "nombre": "Sensor Principal",
+        "lecturas": [
+          {
+            "id": 105,
+            "temperatura": -18.5,
+            "ambiente": 22.1,
+            "creado": "2026-06-02T12:00:00.000Z"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+### 2. Monitoreo en Tiempo Real - Stream (SSE) (GET)
+- **Ruta:** `/monitoring/telemetria/stream`
+- **Método:** `GET`
+- **Query Params:**
+  - `token` (Requerido): JWT access token de usuario.
+- **Descripción:** Establece un canal de eventos unidireccionales (Server-Sent Events) para recibir telemetría en vivo. Las sucursales a monitorear se filtran de forma automática y segura según el JWT del usuario.
+- **Detalles:** Ver la [Documentación de SSE](file:///C:/Users/idtTe/Desktop/proyectos/temp/backend/docs/SSE_DOCUMENTATION.md) para más detalles.
+
+### 3. Calcular Resumen Diario de Sucursal (POST)
+- **Ruta:** `/reportes/sucursales/:id/calcular`
+- **Método:** `POST`
+- **Descripción:** Genera el resumen consolidado de mediciones diarias (temperatura promedio, mínima, máxima, mediana) de la sucursal indicada por `:id`.
+- **Respuesta (200 OK):**
+  ```json
+  {
+    "mensaje": "Resumen calculado correctamente"
+  }
+  ```
+
+### 4. Descargar Reporte Excel de Sucursal (GET)
+- **Ruta:** `/reportes/sucursales/:id/excel`
+- **Método:** `GET`
+- **Descripción:** Genera y descarga un archivo binario de Excel (`.xlsx`) con el reporte histórico completo de mediciones de la sucursal indicada por `:id`.
+- **Respuesta (200 OK):** Archivo binario `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
 
 ---
 

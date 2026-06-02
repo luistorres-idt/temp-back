@@ -17,6 +17,7 @@ import { InfoEstatusController } from "../controllers/infoEstatus.js";
 // [DDD] Bounded Context: Monitoring
 import { DataControllerV2 } from "../modules/monitoring/infrastructure/http/DataControllerV2.js";
 import { CongeladoresControllerV2 } from "../modules/monitoring/infrastructure/http/CongeladoresControllerV2.js";
+import { TelemetriaStreamController } from "../modules/monitoring/infrastructure/http/TelemetriaStreamController.js";
 import { ReportesController } from "../controllers/reportes.js";
 import { AutenticacionMiddleware } from "../middlewares/autenticacion/autenticacion.js";
 import {
@@ -68,6 +69,10 @@ export class AppRouter {
         // [DDD] Usando CongeladoresControllerV2 — logica extraida a ObtenerTelemetria use case
         const congeladoresControllerV2 = new CongeladoresControllerV2();
         router.get("/api/congeladores/:id/telemetria", congeladoresControllerV2.obtenerTelemetria);
+        
+        // Canal de Server-Sent Events (SSE) en vivo para telemetría
+        router.get("/api/monitoring/telemetria/stream", TelemetriaStreamController.stream);
+
         // [legacy] CRUD de congeladores aun usa el controller anterior
         const congeladoresController = new CongeladoresController();
         router.use("/api/congeladores", QueryCongeladoresMiddleware.execute, crearRouterCRUD(congeladoresController));

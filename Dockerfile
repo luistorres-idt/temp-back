@@ -63,7 +63,7 @@ COPY --from=builder /app/src ./src
 
 # Copiar y preparar el entrypoint
 COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x entrypoint.sh
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 # Usar el usuario sin privilegios 'node' incluido por defecto para seguridad
 USER node

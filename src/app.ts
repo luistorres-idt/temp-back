@@ -7,8 +7,6 @@ import { AutenticacionMiddleware } from "./middlewares/autenticacion/autenticaci
 import { PaginacionMiddleware } from "./middlewares/paginacion.js";
 import { QueryMiddleware } from "./middlewares/query.js";
 import { AppRouter } from "./routes/index.js";
-import { inicializarSocket } from "./config/socket.js";
-import { initializeSocketServer, NotificationEmitter } from "./sockets/index.js";
 import type { Application } from "express";
 // [DDD] Event handler del bounded context Monitoring
 import { OnTelemetriaRecibida } from "./modules/monitoring/application/event-handlers/OnTelemetriaRecibida.js";
@@ -17,15 +15,8 @@ import { iniciarReporteCron } from "./jobs/reporteDiario.js";
 const app: Application = express();
 const httpServer = createServer(app);
 
-// Socket.IO
-const io = initializeSocketServer(httpServer);
-NotificationEmitter.getInstance().initialize(io);
-
-// Inicializar Socket.io congeladores
-inicializarSocket(io);
-
 // [DDD] Registrar event handlers del bounded context Monitoring
-new OnTelemetriaRecibida(io).registrar();
+new OnTelemetriaRecibida().registrar();
 
 // Seguridad
 app.disable("x-powered-by");

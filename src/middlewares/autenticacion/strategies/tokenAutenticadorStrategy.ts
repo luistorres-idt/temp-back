@@ -8,10 +8,17 @@ const MENSAJE_ERROR_AUTENTICACION =
 export class TokenAutenticadorStrategy implements AutenticadorStrategy {
     #obtenerDataHeader = (req: AutenticacionContext["req"]): { token: string } | null => {
         const authHeader = req.headers["authorization"];
-        if (!authHeader) return null;
+        if (authHeader) {
+            const [, token] = authHeader.split(" ");
+            return token ? { token } : null;
+        }
 
-        const [, token] = authHeader.split(" ");
-        return token ? { token } : null;
+        const queryToken = req.query.token;
+        if (queryToken && typeof queryToken === "string") {
+            return { token: queryToken };
+        }
+
+        return null;
     };
 
     #verificarData = (req: AutenticacionContext["req"], { token }: { token: string }): boolean => {

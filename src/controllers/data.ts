@@ -5,7 +5,7 @@ import { prisma } from "../config/db.js";
 import { AppRequest } from "../types/types.js";
 import { Response } from "express";
 import { MENSAJE_ERROR, MENSAJE_EXITO } from "../utils/mensajes.js";
-import { io } from "../config/socket.js";
+import { TelemetriaStreamController } from "../modules/monitoring/infrastructure/http/TelemetriaStreamController.js";
 
 export class DataController extends BaseController {
     constructor() {
@@ -127,22 +127,21 @@ export class DataController extends BaseController {
                 return registros;
             });
 
-            // Emitir evento WS por cada sensor guardado (fuera de la transaccion para no bloquearla)
-            if (io) {
-                for (const registro of resultados) {
-                    const { _ws: ws } = registro;
-                    const room = `sucursal:${ws.idSucursal}`;
+            // Emitir evento SSE por cada sensor guardado (fuera de la transaccion para no bloquearla)
+            for (const registro of resultados) {
+                const { _ws: ws } = registro;
 
-                    io.to(room).emit("telemetria:nueva", {
-                        idCongelador: ws.idCongelador,
-                        idDispositivo: ws.idDispositivo,
-                        nombreDispositivo: ws.nombreDispositivo,
-                        temperatura: ws.temperatura,
-                        ambiente: ws.ambiente,
-                        timestamp: ws.timestamp,
-                    });
-                    console.log("Emitiendo evento telemetria:nueva");
-                }
+                TelemetriaStreamController.enviarTelemetria({
+                    idCongelador: ws.idCongelador,
+                    idDispositivo: ws.idDispositivo,
+                    nombreDispositivo: ws.nombreDispositivo,
+                    temperatura: ws.temperatura,
+                    ambiente: ws.ambiente,
+                    humedad: null,
+                    timestamp: ws.timestamp,
+                    idSucursal: ws.idSucursal,
+                });
+                console.log("Emitiendo evento telemetria:nueva via SSE (legacy controller)");
             }
 
             res.status(201).json({
