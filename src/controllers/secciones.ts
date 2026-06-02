@@ -101,7 +101,6 @@ export class SeccionesController extends BaseController {
 
         try {
             const data = result.data as Record<string, unknown>;
-            this.inyectarTenant(req, data);
 
             const elemento = await this.model.crearElemento({ data });
             res.status(201).json({ mensaje: MENSAJE_EXITO.CREACION, data: elemento });
