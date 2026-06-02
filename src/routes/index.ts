@@ -20,6 +20,7 @@ import { CongeladoresControllerV2 } from "../modules/monitoring/infrastructure/h
 import { TelemetriaStreamController } from "../modules/monitoring/infrastructure/http/TelemetriaStreamController.js";
 import { ReportesController } from "../controllers/reportes.js";
 import { AutenticacionMiddleware } from "../middlewares/autenticacion/autenticacion.js";
+import { autenticarGateway } from "../middlewares/autenticacion/autenticacionGateway.js";
 import {
     QueryClientesMiddleware,
     QuerySucursalesMiddleware,
@@ -41,10 +42,10 @@ export class AppRouter {
         router.use("/api/autenticacion", crearRouterAutenticacion());
 
 
-        // Ingesta de data desde dispositivos IoT (sin token de usuario)
+        // Ingesta de data desde dispositivos IoT (autenticado por API Key de Gateway)
         // [DDD] Usando DataControllerV2 — logica extraida a IngerirDatosSensor use case
         const dataControllerV2 = new DataControllerV2();
-        router.post("/api/data", dataControllerV2.crearElemento);
+        router.post("/api/data", autenticarGateway, dataControllerV2.crearElemento);
 
         // [legacy] dataController para GET/PATCH de data protegidos — se migrara en fase siguiente
         const dataController = new DataController();
@@ -76,7 +77,10 @@ export class AppRouter {
         // [legacy] CRUD de congeladores aun usa el controller anterior
         const congeladoresController = new CongeladoresController();
         router.use("/api/congeladores", QueryCongeladoresMiddleware.execute, crearRouterCRUD(congeladoresController));
-        router.use("/api/gateways", QueryGatewaysMiddleware.execute, crearRouterCRUD(new GatewaysController()));
+        const gatewaysController = new GatewaysController();
+        router.post("/api/gateways/:id/token", gatewaysController.generarToken);
+        router.delete("/api/gateways/:id/token", gatewaysController.eliminarToken);
+        router.use("/api/gateways", QueryGatewaysMiddleware.execute, crearRouterCRUD(gatewaysController));
         router.use("/api/dispositivos", QueryDispositivosMiddleware.execute, crearRouterCRUD(new DispositivosController()));
 
         // [legacy] GET y PATCH de data protegidos — pendiente de migrar

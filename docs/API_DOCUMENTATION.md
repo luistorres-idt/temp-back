@@ -143,6 +143,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 
 - **Ruta:** `/data`
 - **Método:** `POST`
+- **Autenticación:** Sí. Requiere cabecera `Authorization: Bearer <TOKEN_DE_GATEWAY>` (API Key del Gateway generado en el sistema).
 
 ### Body
 
@@ -212,7 +213,9 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 ```
 
 ### Consideraciones
-- El `identificador` raíz debe corresponder a un **Gateway** registrado y activo en el sistema.
+- Se debe enviar el token de la API Key del gateway en el encabezado de autorización (`Authorization: Bearer <TOKEN_DE_GATEWAY>`).
+- El backend verificará de forma segura el hash SHA-256 de la API Key en base de datos.
+- El gateway debe coincidir en `identificador` (MAC) con la clave provista y encontrarse con `estatus = true` (activo).
 - El `identificador` de cada sensor debe corresponder a la **dirección MAC** de un **Dispositivo** asociado a ese gateway.
 - Si algún gateway o dispositivo no se encuentra, la transacción se revierte y no se crea ningún registro.
 
@@ -220,6 +223,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 | Código | Descripción |
 |--------|-------------|
 | 400 | Datos de validación incorrectos o dispositivo no encontrado |
+| 401 | Credenciales de gateway no proporcionadas, inválidas, inactivas o que no coinciden con el identificador |
 | 404 | Gateway no encontrado |
 
 ---
@@ -279,6 +283,34 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 - **Método:** `GET`
 - **Descripción:** Genera y descarga un archivo binario de Excel (`.xlsx`) con el reporte histórico completo de mediciones de la sucursal indicada por `:id`.
 - **Respuesta (200 OK):** Archivo binario `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
+
+### 5. Gestión de API Keys para Gateways
+
+Estos endpoints permiten la administración del ciclo de vida de los tokens de autenticación física de los gateways. Requieren autenticación JWT de usuario (Roles: `superusuario`, `administrador`).
+
+#### A. Generar API Key (POST)
+Genera una clave criptográfica nueva para el gateway especificado y almacena su hash SHA-256 en la base de datos.
+- **Ruta:** `/gateways/:id/token`
+- **Método:** `POST`
+- **Respuesta (200 OK):**
+  ```json
+  {
+    "mensaje": "API Key generada correctamente",
+    "token": "gw_prod_8f3d9b2e7a1c4f5b..."
+  }
+  ```
+  *Nota: La clave (`token`) solo se expone en texto plano en esta respuesta y no se puede recuperar con posterioridad.*
+
+#### B. Revocar/Eliminar API Key (DELETE)
+Invalida la clave de acceso asociada al gateway, removiendo su hash de la base de datos. Los dispositivos que transmitan usando esta clave serán rechazados de inmediato.
+- **Ruta:** `/gateways/:id/token`
+- **Método:** `DELETE`
+- **Respuesta (200 OK):**
+  ```json
+  {
+    "mensaje": "API Key eliminada correctamente"
+  }
+  ```
 
 ---
 
