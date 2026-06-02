@@ -16,7 +16,7 @@ export class GatewaysController extends BaseController {
     }
 
     generarToken = async (req: AppRequest, res: Response): Promise<void> => {
-        const id = req.params.id;
+        const id = req.params.id as string;
 
         try {
             const gatewayId = parseInt(id, 10);
@@ -56,7 +56,7 @@ export class GatewaysController extends BaseController {
     };
 
     eliminarToken = async (req: AppRequest, res: Response): Promise<void> => {
-        const id = req.params.id;
+        const id = req.params.id as string;
 
         try {
             const gatewayId = parseInt(id, 10);
