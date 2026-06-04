@@ -2,7 +2,7 @@
 
 Este documento describe la estructura, tablas, campos y relaciones de la base de datos utilizada en la aplicación. La base de datos es relacional (MySQL) y se gestiona mediante **Prisma ORM**.
 
-El archivo de esquema principal se encuentra en [schema.prisma](file:///C:/Users/idtTe/Desktop/proyectos/temp/backend/prisma/schema.prisma).
+El archivo de esquema principal se encuentra en [schema.prisma](../prisma/schema.prisma).
 
 ---
 
