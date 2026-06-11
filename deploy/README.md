@@ -88,18 +88,33 @@ Script de automatización para preparar la máquina virtual de AWS EC2. Se ejecu
 
 ## Flujo de Integración y Despliegue Continuo (CI/CD)
 
-El repositorio cuenta con una automatización completa en `.github/workflows/deploy.yml` que elimina la necesidad de realizar commits de código compilado a Git o hacer pull manual. El flujo funciona de la siguiente manera en cada push a `main`:
+El repositorio cuenta con dos automatizaciones de despliegue según la rama:
 
-```
-[Push a main] ──> [GitHub Actions] ──> [Build Front con pnpm] ──> [Empacar tar.gz]
-                                                                        │
-[Levantar docker compose] <── [Extraer en EC2] <── [Subir por SCP] <────┘
+*   **Producción (rama `main`):** Controlado por [.github/workflows/deploy.yml].
+*   **Desarrollo (rama `dev`):** Controlado por [.github/workflows/deploy-dev.yml].
+
+El flujo funciona de la siguiente manera en cada push a `main` o `dev`:
+
+```mermaid
+flowchart TD
+    subgraph GH ["GitHub (Entorno de Compilación)"]
+        A["Push a main / dev"] --> B["GitHub Actions"]
+        B --> C["Build Front con pnpm"]
+        C --> D["Empacar código (.tar.gz)"]
+    end
+
+    subgraph SRV ["Servidor EC2 (Entorno de Destino)"]
+        E["Recibir y subir por SCP"] --> F["Extraer en EC2"]
+        F --> G["Levantar docker compose\n(docker compose up -d --build)"]
+    end
+
+    D -->|"Transferencia segura (SCP)"| E
 ```
 
-1. **GitHub Actions** descarga los repositorios del backend y frontend de manera segura.
+1. **GitHub Actions** descarga los repositorios del backend y frontend (usando la rama correspondiente `main` o `dev`) de manera segura.
 2. Descarga dependencias y compila los estáticos del frontend (`pnpm build`).
 3. Empaqueta el backend y la carpeta compilada `dist` del frontend en archivos `.tar.gz`.
-4. Transfiere de manera segura los paquetes comprimidos al EC2 usando SCP (`appleboy/scp-action`).
+4. Transfiere de manera segura los paquetes comprimidos al EC2 correspondiente (Producción o Desarrollo) usando SCP (`appleboy/scp-action`).
 5. Con SSH (`appleboy/ssh-action`), extrae los paquetes en la máquina destino y ejecuta la reconstrucción de los contenedores Docker mediante `docker compose up -d --build`.
 
 ---
@@ -114,13 +129,19 @@ El repositorio cuenta con una automatización completa en `.github/workflows/dep
   * **RDS Security Group:** Permitir `TCP 3306` (MySQL) de entrada. **Importante:** En el origen del tráfico, selecciona el ID del *Security Group de tu EC2* para autorizar únicamente la comunicación segura entre tus servidores.
 
 ### 2. Configurar los Secretos de GitHub
-En tu repositorio de backend de GitHub, ve a **Settings > Secrets and variables > Actions** y añade los siguientes secretos de producción:
+En tu repositorio de backend de GitHub, ve a **Settings > Secrets and variables > Actions** y añade los siguientes secretos:
 
-* `EC2_HOST`: IP pública o DNS de tu máquina EC2.
+**Para Producción (rama `main`):**
+* `EC2_HOST`: IP pública o DNS de tu máquina EC2 de producción.
 * `EC2_USER`: `ubuntu` (usuario por defecto en AWS Ubuntu).
-* `EC2_SSH_KEY`: Clave privada SSH (.pem) completa para ingresar al servidor.
+* `EC2_SSH_KEY`: Clave privada SSH (.pem) completa para ingresar al servidor de producción.
 * `FRONT_REPO`: Nombre del repositorio de tu front (ej. `mi-usuario/temp-front`).
 * `GH_PAT`: Token personal de GitHub (Personal Access Token) con permisos `repo` para descargar el front durante el build.
+
+**Para Desarrollo (rama `dev`):**
+* `EC2_DEV_HOST`: IP pública o DNS de tu máquina EC2 de desarrollo.
+* `EC2_DEV_USER`: `ubuntu` (usuario de tu EC2 de desarrollo).
+* `EC2_DEV_SSH_KEY`: Clave privada SSH (.pem) completa para ingresar al servidor de desarrollo.
 
 ### 3. Preparación inicial del Servidor (EC2)
 Conéctate a tu instancia EC2 por SSH por primera vez y ejecuta:
