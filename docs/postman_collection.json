@@ -24,6 +24,11 @@
             "key": "accessToken",
             "value": "",
             "description": "Token JWT obtenido del login"
+        },
+        {
+            "key": "gatewayToken",
+            "value": "",
+            "description": "Token (API Key) obtenido de generarToken para un Gateway"
         }
     ],
     "item": [
@@ -1269,6 +1274,45 @@
                             ]
                         }
                     }
+                },
+                {
+                    "name": "Obtener Telemetría del Congelador (V2)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/congeladores/1/telemetria?modo=vivo",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "congeladores",
+                                "1",
+                                "telemetria"
+                            ],
+                            "query": [
+                                {
+                                    "key": "modo",
+                                    "value": "vivo",
+                                    "description": "Modo de telemetría: vivo | historico"
+                                },
+                                {
+                                    "key": "fechaInicio",
+                                    "value": "2026-06-03T00:00:00.000Z",
+                                    "disabled": true,
+                                    "description": "Fecha inicio (solo para modo historico)"
+                                },
+                                {
+                                    "key": "fechaFin",
+                                    "value": "2026-06-03T23:59:59.999Z",
+                                    "disabled": true,
+                                    "description": "Fecha fin (solo para modo historico)"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene la telemetría en tiempo real o el histórico de temperaturas de los sensores vinculados a un congelador.\n\n### Parámetros Query\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `modo` | string | ❌ (default: vivo) | `modo` de telemetría: `vivo` o `historico` |\n| `fechaInicio` | string (ISO) | ❌ | Inicio del rango histórico |\n| `fechaFin` | string (ISO) | ❌ | Fin del rango histórico |\n\n### Respuesta Exitosa Modo Vivo (200)\n```json\n{\n  \"congeladorId\": 1,\n  \"nombreCongelador\": \"Congelador Industrial #1\",\n  \"seccionId\": 1,\n  \"dispositivos\": [\n    {\n      \"id\": 1,\n      \"nombre\": \"Sensor Temp #1\",\n      \"identificador\": \"00:1A:2B:3C:4D:5E\",\n      \"ultimaLectura\": {\n        \"temperatura\": -18.5,\n        \"ambiente\": 22.3,\n        \"creado\": \"2026-06-03T15:00:00.000Z\"\n      }\n    }\n  ]\n}\n```"
+                    }
                 }
             ]
         },
@@ -1399,6 +1443,46 @@
                                 "1"
                             ]
                         }
+                    }
+                },
+                {
+                    "name": "Generar API Key del Gateway",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways/1/token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways",
+                                "1",
+                                "token"
+                            ]
+                        },
+                        "description": "Genera una nueva API Key en texto plano para el gateway con el ID proporcionado. Esta clave se muestra una única vez y su hash SHA-256 es persistido para la validación de telemetría.\n\n### Respuesta Exitosa (200)\n```json\n{\n  \"mensaje\": \"API Key generada correctamente\",\n  \"token\": \"gw_prod_7a12b...\"\n}\n```"
+                    }
+                },
+                {
+                    "name": "Eliminar API Key del Gateway",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/gateways/1/token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "gateways",
+                                "1",
+                                "token"
+                            ]
+                        },
+                        "description": "Revoca y elimina la API Key del gateway indicado, denegando futuros accesos para el registro de telemetría hasta que se genere otra clave.\n\n### Respuesta Exitosa (200)\n```json\n{\n  \"mensaje\": \"API Key eliminada correctamente\"\n}\n```"
                     }
                 }
             ]
@@ -1602,6 +1686,16 @@
                 {
                     "name": "Registrar Lecturas (desde Gateway)",
                     "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{gatewayToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
                         "method": "POST",
                         "header": [
                             {
@@ -1792,6 +1886,113 @@
                                 "1"
                             ]
                         }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📊 Reportes",
+            "description": "Módulo de generación de resúmenes diarios y exportación de reportes detallados en formato Excel.",
+            "item": [
+                {
+                    "name": "Calcular Resumen Diario",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"fecha\": \"2026-06-02\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/reportes/sucursales/1/calcular",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "reportes",
+                                "sucursales",
+                                "1",
+                                "calcular"
+                            ]
+                        },
+                        "description": "Calcula de forma manual y archiva en base de datos el resumen diario de métricas para la sucursal y la fecha seleccionadas.\n\n### Body (JSON)\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `fecha` | string | ✅ | Fecha del reporte en formato YYYY-MM-DD |\n\n### Respuesta Exitosa (201)\n```json\n{\n  \"data\": {\n    \"id\": 15,\n    \"idSucursal\": 1,\n    \"fecha\": \"2026-06-02T00:00:00.000Z\",\n    \"congeladoresProcesados\": 5,\n    \"creado\": \"2026-06-03T08:00:00.000Z\"\n  }\n}\n```"
+                    }
+                },
+                {
+                    "name": "Generar Reporte Excel",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/reportes/sucursales/1/excel?fecha=2026-06-02",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "reportes",
+                                "sucursales",
+                                "1",
+                                "excel"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fecha",
+                                    "value": "2026-06-02",
+                                    "description": "Fecha del detalle (requerido, YYYY-MM-DD)"
+                                },
+                                {
+                                    "key": "fechaInicio",
+                                    "value": "2026-06-01",
+                                    "disabled": true,
+                                    "description": "Fecha de inicio para hoja resumen (opcional, YYYY-MM-DD)"
+                                },
+                                {
+                                    "key": "fechaFin",
+                                    "value": "2026-06-02",
+                                    "disabled": true,
+                                    "description": "Fecha de fin para hoja resumen (opcional, YYYY-MM-DD)"
+                                }
+                            ]
+                        },
+                        "description": "Genera y descarga un libro de Excel (.xlsx) conteniendo el histórico consolidado de la sucursal (hoja \"Resumen\") y las lecturas minuto a minuto del día especificado (hoja \"Datos\").\n\n### Parámetros Query\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `fecha` | string | ✅ | Día de desglose detallado (YYYY-MM-DD) |\n| `fechaInicio` | string | ❌ | Límite inferior de resumen (default: `fecha`) |\n| `fechaFin` | string | ❌ | Límite superior de resumen (default: `fecha`) |\n\n### Respuesta\nRetorna un archivo binario `.xlsx` con cabecera `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "📺 Monitoreo en Tiempo Real (SSE)",
+            "description": "Transmisión en vivo mediante Server-Sent Events (SSE) de las lecturas entrantes filtradas según los permisos del usuario.",
+            "item": [
+                {
+                    "name": "Conectar a Stream de Telemetría",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/monitoring/telemetria/stream",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "monitoring",
+                                "telemetria",
+                                "stream"
+                            ]
+                        },
+                        "description": "Establece una conexión persistente (SSE) para recibir las lecturas de telemetría de congeladores en tiempo real a medida que ingresan al sistema. Las lecturas son filtradas automáticamente según la sucursal o el cliente del usuario extraído del JWT.\n\n### Eventos Emitidos\n- `connected`: Enviado inmediatamente al establecer conexión exitosamente.\n- `telemetria:nueva`: Emitido cada vez que un gateway ingiere lecturas nuevas.\n\n### Cabeceras de Respuesta\n- `Content-Type`: `text/event-stream`\n- `Cache-Control`: `no-cache`\n- `Connection`: `keep-alive`"
                     }
                 }
             ]
