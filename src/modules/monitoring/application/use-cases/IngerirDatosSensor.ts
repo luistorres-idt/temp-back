@@ -52,9 +52,13 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             throw new EntityNotFoundError("Gateway", comando.identificadorGateway);
         }
 
+        const sensoresFiltrados = comando.sensores.filter(
+            (sensor) => sensor.data.temperatura !== 655.35
+        );
+
         // Obtener la temperatura ambiente una sola vez si algún sensor en el lote la necesita
         let ambienteComun = 0;
-        const algunSensorNecesitaAmbiente = comando.sensores.some(
+        const algunSensorNecesitaAmbiente = sensoresFiltrados.some(
             (sensor) => sensor.data.ambiente === undefined || sensor.data.ambiente === null
         );
         if (algunSensorNecesitaAmbiente) {
@@ -64,7 +68,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         // 2. Procesar sensores en transaccion en paralelo — sensores no registrados se omiten
         const procesados = await this.dataRepository.ejecutarEnTransaccion(async (txRepo) => {
             return Promise.all(
-                comando.sensores.map((sensor) =>
+                sensoresFiltrados.map((sensor) =>
                     this.procesarSensor(txRepo, sensor, gateway.id, ambienteComun)
                 )
             );

@@ -287,6 +287,44 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
         })
     })
 
+    // ── Sensores con código de error de batería baja (655.35) ─────────────────
+
+    describe('cuando un sensor manda código de error 655.35 (bateria baja)', () => {
+        beforeEach(() => {
+            vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
+            vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
+                const txRepo = crearRepoFake()
+                vi.mocked(txRepo.buscarDispositivoPorIdentificadorYGateway).mockResolvedValue(dispositivoFake)
+                vi.mocked(txRepo.persistirLectura).mockResolvedValue(lecturaFake)
+                return fn(txRepo)
+            })
+        })
+
+        it('no lo registra, no lo procesa y no lo devuelve en guardados o noRegistrados', async () => {
+            const sensorNormal = sensorPayload()
+            const sensorError = {
+                ...sensorPayload(),
+                identificador: '00:1A:2B:3C:4D:5F',
+                data: { temperatura: 655.35, ambiente: 20.0 }
+            }
+
+            const comando: ComandoIngesta = {
+                identificadorGateway: 'GW-001-ABC',
+                sensores: [sensorNormal, sensorError],
+            }
+
+            const resultado = await useCase.execute(comando)
+
+            // Solo el sensor normal debe guardarse
+            expect(resultado.guardados).toHaveLength(1)
+            expect(resultado.noRegistrados).toHaveLength(0)
+
+            // El eventBus solo se debio haber llamado para el sensor normal (1 evento)
+            const eventosPublicados = vi.mocked(eventBus.publish).mock.calls[0][0]
+            expect(eventosPublicados).toHaveLength(1)
+        })
+    })
+
     // ── Resolución de ambiente ──────────────────────────────────────────────
 
     describe('resolución de temperatura ambiente', () => {
