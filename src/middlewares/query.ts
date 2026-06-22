@@ -7,7 +7,7 @@ export class QueryMiddleware {
     const { query } = req;
     const where: Record<string, unknown> = {};
 
-    const { nombre, estatus, identificador, fecha, cliente, sucursal, seccion, dispositivo, gateway } = query as Record<
+    const { nombre, estatus, identificador, fecha, cliente, sucursal, seccion, dispositivo, gateway,perfil } = query as Record<
       string,
       string | undefined
     >;
@@ -37,7 +37,7 @@ export class QueryMiddleware {
     }
 
     // Filtros de relaciones (procesados de forma limpia iterando las llaves validas)
-    const relaciones = { cliente, sucursal, seccion, dispositivo, gateway };
+    const relaciones = { cliente, sucursal, seccion, dispositivo, gateway, perfil };
     for (const [clave, valor] of Object.entries(relaciones)) {
         if (valor) {
             const idNumber = parseInt(valor, 10);
