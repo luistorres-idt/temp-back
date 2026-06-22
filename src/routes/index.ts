@@ -14,6 +14,7 @@ import { GatewaysController } from "../controllers/gateways.js";
 import { DispositivosController } from "../controllers/dispositivos.js";
 import { DataController } from "../controllers/data.js";
 import { InfoEstatusController } from "../controllers/infoEstatus.js";
+import { PermisosController } from "../controllers/permisos.js";
 // [DDD] Bounded Context: Monitoring
 import { DataControllerV2 } from "../modules/monitoring/infrastructure/http/DataControllerV2.js";
 import { CongeladoresControllerV2 } from "../modules/monitoring/infrastructure/http/CongeladoresControllerV2.js";
@@ -45,7 +46,7 @@ export class AppRouter {
         // Ingesta de data desde dispositivos IoT (autenticado por API Key de Gateway)
         // [DDD] Usando DataControllerV2 — logica extraida a IngerirDatosSensor use case
         const dataControllerV2 = new DataControllerV2();
-        router.post("/api/data", autenticarGateway, dataControllerV2.crearElemento);
+        router.post("/api/data", dataControllerV2.crearElemento);
 
         // [legacy] dataController para GET/PATCH de data protegidos — se migrara en fase siguiente
         const dataController = new DataController();
@@ -62,6 +63,9 @@ export class AppRouter {
         router.use("/api/modulos", crearRouterCRUD(new ModulosController()));
         router.use("/api/operaciones", crearRouterCRUD(new OperacionesController()));
         router.use("/api/perfiles", crearRouterCRUD(new PerfilesController()));
+        const permisosController = new PermisosController();
+        router.get("/api/permisos", permisosController.obtenerPermisosPerfil);
+        router.post("/api/permisos", permisosController.guardarPermisosPerfil);
         router.use("/api/usuarios", QueryUsuariosMiddleware.execute, crearRouterCRUD(new UsuariosController()));
         router.use("/api/clientes", QueryClientesMiddleware.execute, crearRouterCRUD(new ClientesController()));
         router.use("/api/sucursales", QuerySucursalesMiddleware.execute, crearRouterCRUD(new SucursalesController()));
