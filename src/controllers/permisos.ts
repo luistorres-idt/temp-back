@@ -1,31 +1,11 @@
 import { Response } from "express";
 import { AppRequest } from "../types/types.js";
-import { prisma } from "../config/db.js";
+import { PermisoModel } from "../models/permisos.js";
 
 export class PermisosController {
     obtenerPermisosPerfil = async (req: AppRequest, res: Response): Promise<void> => {
-        const idPerfilStr = req.query.idPerfil as string;
-
         try {
-            if (!idPerfilStr) {
-                res.status(400).json({ error: "El ID del perfil es requerido" });
-                return;
-            }
-
-            const idPerfil = parseInt(idPerfilStr, 10);
-            if (isNaN(idPerfil)) {
-                res.status(400).json({ error: "ID de perfil no válido" });
-                return;
-            }
-
-            const permisos = await prisma.permiso.findMany({
-                where: { idPerfil, estatus: true },
-                select: {
-                    id: true,
-                    idAccion: true,
-                    idPerfil: true
-                }
-            });
+            const permisos = await PermisoModel.obtenerPermisos(req.where || {});
 
             res.json({
                 mensaje: "Permisos cargados correctamente",
@@ -57,24 +37,7 @@ export class PermisosController {
                 return;
             }
 
-            // Transacción para borrar y re-crear los permisos
-            await prisma.$transaction(async (tx) => {
-                // Eliminar permisos existentes para el perfil
-                await tx.permiso.deleteMany({
-                    where: { idPerfil: idPerfilNum }
-                });
-
-                if (idAcciones.length > 0) {
-                    const dataToCreate = idAcciones.map((idAccion: number) => ({
-                        idPerfil: idPerfilNum,
-                        idAccion
-                    }));
-
-                    await tx.permiso.createMany({
-                        data: dataToCreate
-                    });
-                }
-            });
+            await PermisoModel.guardarPermisos(idPerfilNum, idAcciones);
 
             res.json({
                 mensaje: "Permisos actualizados correctamente"
