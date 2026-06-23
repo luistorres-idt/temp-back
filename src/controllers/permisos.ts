@@ -5,7 +5,7 @@ import { PermisoModel } from "../models/permisos.js";
 export class PermisosController {
     obtenerPermisosPerfil = async (req: AppRequest, res: Response): Promise<void> => {
         try {
-            const permisos = await PermisoModel.obtenerPermisos(req.where || {});
+            const permisos = await PermisoModel.obtenerElementos(req.where || {});
 
             res.json({
                 mensaje: "Permisos cargados correctamente",
@@ -37,7 +37,7 @@ export class PermisosController {
                 return;
             }
 
-            await PermisoModel.guardarPermisos(idPerfilNum, idAcciones);
+            await PermisoModel.crearElementos(idPerfilNum, idAcciones);
 
             res.json({
                 mensaje: "Permisos actualizados correctamente"
