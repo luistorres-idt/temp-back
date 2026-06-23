@@ -1,7 +1,7 @@
 import { prisma } from "../config/db.js";
 
 export const PermisoModel = {
-    async obtenerPermisos(where: object) {
+    async obtenerElementos(where: object) {
         return prisma.permiso.findMany({
             where,
             select: {
@@ -12,7 +12,7 @@ export const PermisoModel = {
         });
     },
 
-    async guardarPermisos(idPerfil: number, idAcciones: number[]) {
+    async crearElementos(idPerfil: number, idAcciones: number[]) {
         return prisma.$transaction(async (tx) => {
             // Eliminar permisos existentes para el perfil
             await tx.permiso.deleteMany({
