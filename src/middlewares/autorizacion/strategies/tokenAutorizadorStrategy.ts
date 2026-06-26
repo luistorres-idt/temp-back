@@ -40,6 +40,20 @@ export class TokenAutorizadorStrategy implements AutorizadorStrategy {
 
         const recurso = RECURSO_A_MODULO[recursoOriginal.toLowerCase()] || recursoOriginal.toLowerCase();
 
+        // Permitir a usuarios ver y editar su propio cliente (ej. para la hora de reportes)
+        if (recurso === "cliente" && req.usuario?.cliente?.id) {
+            const parts = req.path.split("/");
+            const idParam = parts[3];
+            if (idParam) {
+                const idClienteParam = parseInt(idParam, 10);
+                if (!isNaN(idClienteParam) && req.usuario.cliente.id === idClienteParam) {
+                    if (req.method === "GET" || req.method === "PATCH") {
+                        return true;
+                    }
+                }
+            }
+        }
+
         // Bypass de rutas de monitoreo, ya que manejan su propio control de acceso/scoping
         if (recurso === "monitoring") {
             return true;

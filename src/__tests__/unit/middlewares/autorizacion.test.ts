@@ -196,4 +196,59 @@ describe("AutorizacionMiddleware", () => {
         expect(resMockBlocked.status).toHaveBeenCalledWith(401);
         expect(nextFunction).not.toHaveBeenCalled();
     });
+
+    it("debe permitir GET y PATCH a un usuario sobre su propio cliente, incluso sin permisos de cliente en su perfil", () => {
+        mockReq = {
+            path: "/api/clientes/5",
+            headers: {
+                authorization: "Bearer token123",
+            },
+            method: "PATCH",
+            usuario: {
+                id: 2,
+                nombre: "Juan",
+                correo: "juan@mail.com",
+                perfil: {
+                    id: 2,
+                    nombre: "administrador",
+                    acciones: {}, // Sin permisos de cliente en su perfil
+                },
+                cliente: {
+                    id: 5,
+                },
+            },
+        };
+
+        AutorizacionMiddleware.execute(mockReq as AppRequest, mockRes as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalled();
+    });
+
+    it("debe denegar acceso si intenta acceder a un cliente que no es el suyo sin permisos en su perfil", () => {
+        mockReq = {
+            path: "/api/clientes/6", // Cliente diferente (el suyo es 5)
+            headers: {
+                authorization: "Bearer token123",
+            },
+            method: "GET",
+            usuario: {
+                id: 2,
+                nombre: "Juan",
+                correo: "juan@mail.com",
+                perfil: {
+                    id: 2,
+                    nombre: "administrador",
+                    acciones: {},
+                },
+                cliente: {
+                    id: 5,
+                },
+            },
+        };
+
+        AutorizacionMiddleware.execute(mockReq as AppRequest, mockRes as Response, nextFunction);
+
+        expect(mockRes.status).toHaveBeenCalledWith(401);
+        expect(nextFunction).not.toHaveBeenCalled();
+    });
 });
