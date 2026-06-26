@@ -1,5 +1,5 @@
 export const ACCIONES: Record<string, string> = {
-    GET: "leer",
+    GET: "ver",
     POST: "crear",
     PATCH: "editar",
     DELETE: "eliminar",

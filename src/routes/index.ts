@@ -21,6 +21,7 @@ import { CongeladoresControllerV2 } from "../modules/monitoring/infrastructure/h
 import { TelemetriaStreamController } from "../modules/monitoring/infrastructure/http/TelemetriaStreamController.js";
 import { ReportesController } from "../controllers/reportes.js";
 import { AutenticacionMiddleware } from "../middlewares/autenticacion/autenticacion.js";
+import { AutorizacionMiddleware } from "../middlewares/autorizacion/autorizacion.js";
 import { autenticarGateway } from "../middlewares/autenticacion/autenticacionGateway.js";
 import {
     QueryClientesMiddleware,
@@ -55,6 +56,7 @@ export class AppRouter {
         // Middleware de autenticación — protege todo lo que viene después
         // ----------------------------------------------------------------
         router.use(AutenticacionMiddleware.execute);
+        router.use(AutorizacionMiddleware.execute);
 
         // ----------------------------------------------------------------
         // Rutas PROTEGIDAS con scoping por perfil de usuario
