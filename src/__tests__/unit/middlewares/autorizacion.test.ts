@@ -170,7 +170,7 @@ describe("AutorizacionMiddleware", () => {
 
         // Supervisor (bloqueado)
         nextFunction.mockClear();
-        const resMockBlocked = {
+        const resMockBlocked: Partial<Response> = {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
         };
