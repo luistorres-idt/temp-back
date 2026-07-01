@@ -56,7 +56,7 @@ export class AppRouter {
         // Middleware de autenticación — protege todo lo que viene después
         // ----------------------------------------------------------------
         router.use(AutenticacionMiddleware.execute);
-        router.use(AutorizacionMiddleware.execute);
+        //router.use(AutorizacionMiddleware.execute);
 
         // ----------------------------------------------------------------
         // Rutas PROTEGIDAS con scoping por perfil de usuario
