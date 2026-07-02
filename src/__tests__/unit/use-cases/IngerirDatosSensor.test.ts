@@ -287,9 +287,9 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
         })
     })
 
-    // ── Sensores con código de error de batería baja (655.35) ─────────────────
+    // ── Sensores con código de error o temperaturas inválidas (655.35, 316.16, 0.13) ─────────────────
 
-    describe('cuando un sensor manda código de error 655.35 (bateria baja)', () => {
+    describe('cuando un sensor manda código de error o temperatura inválida (655.35, 316.16, 0.13)', () => {
         beforeEach(() => {
             vi.mocked(repo.buscarGatewayPorIdentificador).mockResolvedValue(gatewayFake)
             vi.mocked(repo.ejecutarEnTransaccion).mockImplementation(async (fn) => {
@@ -302,15 +302,25 @@ describe('IngerirDatosSensor - use case de ingesta IoT', () => {
 
         it('no lo registra, no lo procesa y no lo devuelve en guardados o noRegistrados', async () => {
             const sensorNormal = sensorPayload()
-            const sensorError = {
+            const sensorError655 = {
                 ...sensorPayload(),
                 identificador: '00:1A:2B:3C:4D:5F',
                 data: { temperatura: 655.35, ambiente: 20.0 }
             }
+            const sensorError316 = {
+                ...sensorPayload(),
+                identificador: '00:1A:2B:3C:4D:5G',
+                data: { temperatura: 316.16, ambiente: 20.0 }
+            }
+            const sensorError013 = {
+                ...sensorPayload(),
+                identificador: '00:1A:2B:3C:4D:5H',
+                data: { temperatura: 0.13, ambiente: 20.0 }
+            }
 
             const comando: ComandoIngesta = {
                 identificadorGateway: 'GW-001-ABC',
-                sensores: [sensorNormal, sensorError],
+                sensores: [sensorNormal, sensorError655, sensorError316, sensorError013],
             }
 
             const resultado = await useCase.execute(comando)

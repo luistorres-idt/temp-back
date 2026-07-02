@@ -52,8 +52,9 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             throw new EntityNotFoundError("Gateway", comando.identificadorGateway);
         }
 
+        const temperaturasInvalidas = [655.35, 316.16, 0.13];
         const sensoresFiltrados = comando.sensores.filter(
-            (sensor) => sensor.data.temperatura !== 655.35
+            (sensor) => !temperaturasInvalidas.includes(sensor.data.temperatura)
         );
 
         // Obtener la temperatura ambiente una sola vez si algún sensor en el lote la necesita

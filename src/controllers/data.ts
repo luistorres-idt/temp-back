@@ -57,8 +57,9 @@ export class DataController extends BaseController {
                 }
                 const registros: RegistroWS[] = [];
 
+                const temperaturasInvalidas = [655.35, 316.16, 0.13];
                 for (const sensor of sensores) {
-                    if (sensor.data.temperatura === 655.35) {
+                    if (temperaturasInvalidas.includes(sensor.data.temperatura)) {
                         continue;
                     }
                     // buscar el dispositivo — incluimos congelador y su seccion para resolver el room de WS
