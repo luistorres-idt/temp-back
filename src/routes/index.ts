@@ -47,7 +47,7 @@ export class AppRouter {
         // Ingesta de data desde dispositivos IoT (autenticado por API Key de Gateway)
         // [DDD] Usando DataControllerV2 — logica extraida a IngerirDatosSensor use case
         const dataControllerV2 = new DataControllerV2();
-        router.post("/api/data", dataControllerV2.crearElemento);
+        router.post("/api/data", autenticarGateway, dataControllerV2.crearElemento);
 
         // [legacy] dataController para GET/PATCH de data protegidos — se migrara en fase siguiente
         const dataController = new DataController();
@@ -97,6 +97,7 @@ export class AppRouter {
         const reportesController = new ReportesController();
         router.post("/api/reportes/sucursales/:id/calcular", reportesController.calcularResumen);
         router.get("/api/reportes/sucursales/:id/excel", reportesController.generarExcel);
+        router.get("/api/reportes/sucursales/:id/insights", reportesController.obtenerInsights);
 
         return router;
     }
