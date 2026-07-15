@@ -145,6 +145,7 @@ model Gateway {
   identificador String        @unique
   nombre        String
   tokenHash     String?       @unique
+  publicKeyPem  String?       @db.Text
   creado        DateTime      @default(now())
   actualizado   DateTime      @updatedAt
   estatus       Boolean       @default(true)
@@ -179,6 +180,9 @@ model Data {
   estatus       Boolean     @default(true)
   idDispositivo Int
   dispositivo   Dispositivo @relation(fields: [idDispositivo], references: [id])
+  firmaGateway  String?     @db.Text
+  hash          String?     @db.VarChar(64)
+  prevHash      String?     @db.VarChar(64)
 
   @@index([idDispositivo, creado])
 }

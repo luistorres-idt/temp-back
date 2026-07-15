@@ -18,6 +18,7 @@ export interface UsuarioToken {
 export type AppRequest = Request & {
     usuario?: UsuarioToken;
     gateway?: Gateway;
+    firmaGateway?: string;
     where?: Record<string, unknown>;
     paginacion?: {
         take?: number;

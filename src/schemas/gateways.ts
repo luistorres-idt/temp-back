@@ -5,6 +5,7 @@ export const GatewaySchema = z.object({
     nombre: z.string(),
     idSeccion: z.number().int(),
     estatus: z.boolean().nullish(),
+    publicKeyPem: z.string().nullish(),
 });
 
 export const gatewaySelect = {
@@ -13,6 +14,7 @@ export const gatewaySelect = {
     nombre: true,
     estatus: true,
     tokenHash: true,
+    publicKeyPem: true,
     creado: true,
     seccion: {
         select: {
