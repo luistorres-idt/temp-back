@@ -48,6 +48,7 @@ export class AutenticacionController {
                 usuario: {
                     id: usuario.id,
                     nombre: usuario.nombre,
+                    apellido: usuario.apellido,
                     correo: usuario.correo,
                     perfil: {
                         id: usuario.perfil?.id,
