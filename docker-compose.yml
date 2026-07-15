@@ -11,9 +11,18 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    depends_on:
+      - redis
     # Descomenta esto si quieres que el backend comparta la red de tu base de datos
     # networks:
     #   - red-mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: backend-redis
+    restart: always
+    ports:
+      - "6379:6379"
 
 # Descomenta esto si tu contenedor de MySQL esta corriendo en una red especifica de Docker
 # networks:

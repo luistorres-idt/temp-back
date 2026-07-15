@@ -10,6 +10,9 @@ const settingsSchema = z.object({
     GMAIL_USER: z.string().optional(),
     GMAIL_APP_PASSWORD: z.string().optional(),
     CRON_TIMEZONE: z.string().default("America/Mexico_City"),
+    REDIS_HOST: z.string().default("127.0.0.1"),
+    REDIS_PORT: z.coerce.number().default(6379),
+    REDIS_PASSWORD: z.string().optional(),
 });
 
 const result = settingsSchema.safeParse(process.env);
@@ -28,4 +31,7 @@ export const {
     GMAIL_USER,
     GMAIL_APP_PASSWORD,
     CRON_TIMEZONE,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_PASSWORD,
 } = result.data;
