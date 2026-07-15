@@ -137,19 +137,21 @@ Puedes reemplazar `:entidad` en las rutas de abajo por cualquiera de los siguien
 
 ---
 
-## 🌡️ Registro de Lecturas (POST /data) - Formato Especial
+## 🌡️ Registro de Lecturas (POST /api/data) - Formato Especial
 
 El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload enviado por el gateway con las lecturas de múltiples sensores y crea registros en las tablas `Data` e `InfoEstatus` automáticamente dentro de una transacción atómica.
 
-- **Ruta:** `/data`
+- **Ruta:** `/api/data`
 - **Método:** `POST`
-- **Autenticación:** Sí. Requiere cabecera `Authorization: Bearer <TOKEN_DE_GATEWAY>` (API Key del Gateway generado en el sistema).
+- **Autenticación:** Sí. Soporta dos modalidades:
+  1. **Autenticación por Firma Digital (Recomendado/No Repudio)**: Requiere las cabeceras `X-Gateway-Signature`, `X-Gateway-Timestamp` (en milisegundos), y `X-Gateway-Nonce`.
+  2. **Autenticación Legacy por API Key**: Requiere cabecera `Authorization: Bearer <TOKEN_DE_GATEWAY>`.
 
 ### Body
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `identificador` | string | Si | Identificador del gateway |
+| `identificador` | string | Si | Identificador único del gateway (MAC address u otra ID física) |
 | `data` | array | Si | Array de objetos sensor |
 
 ### Objeto sensor (cada elemento del array `data`)
@@ -205,25 +207,25 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
   "mensaje": "El registro se ha creado exitosamente",
   "data": [
     {
-      "data": { "id": 1, "temperatura": -18.5, "ambiente": 22.3, "humedad": 65.4, ... },
-      "infoEstatus": { "id": 1, "bateria": 85.5, "rssi": -70, "snr": 10, ... }
+      "data": { "id": 1, "temperatura": -18.5, "ambiente": 22.3, "humedad": 65.4, "firmaGateway": "...", "hash": "...", "prevHash": "..." },
+      "infoEstatus": { "id": 1, "bateria": 85.5, "rssi": -70, "snr": 10 }
     }
   ]
 }
 ```
 
-### Consideraciones
-- Se debe enviar el token de la API Key del gateway en el encabezado de autorización (`Authorization: Bearer <TOKEN_DE_GATEWAY>`).
-- El backend verificará de forma segura el hash SHA-256 de la API Key en base de datos.
-- El gateway debe coincidir en `identificador` (MAC) con la clave provista y encontrarse con `estatus = true` (activo).
-- El `identificador` de cada sensor debe corresponder a la **dirección MAC** de un **Dispositivo** asociado a ese gateway.
-- Si algún gateway o dispositivo no se encuentra, la transacción se revierte y no se crea ningún registro.
+### Consideraciones y Validación
+* **Firma Digital (Modo 1)**: Para no repudio, se firma el body serializado en formato JSON plano concatenado con el timestamp y nonce: `payloadString|timestamp|nonce`. El timestamp debe expresarse en **milisegundos** y estar dentro de una ventana de +/- 5 minutos. El nonce se valida en Redis para evitar replay attacks.
+* **API Key Legacy (Modo 2)**: Se verifica de forma segura calculando el hash SHA-256 de la API Key enviada en `Authorization: Bearer <TOKEN_DE_GATEWAY>` y comparándolo en la base de datos.
+* **Filtrado de Lecturas Inválidas**: El backend ignora de forma silenciosa las lecturas individuales cuya temperatura coincida exactamente con códigos de error físicos (`655.35` por batería baja, `316.16` por corrupción, `0.13` por cortocircuito). El resto de sensores válidos del lote sí son ingresados.
+* **Cadena de Integridad**: Cada lectura persistida en base de datos calcula e indexa su `hash` relacionándolo con el `prevHash` del registro anterior de ese dispositivo, asegurando la inmutabilidad lógica de la telemetría.
+* **Mapeo de Sensores**: El `identificador` de cada sensor debe corresponder a un **Dispositivo** registrado y asociado al gateway emisor. Si el gateway o algún sensor no se localizan, toda la transacción se revierte.
 
 ### Errores
 | Código | Descripción |
 |--------|-------------|
-| 400 | Datos de validación incorrectos o dispositivo no encontrado |
-| 401 | Credenciales de gateway no proporcionadas, inválidas, inactivas o que no coinciden con el identificador |
+| 400 | Datos de validación incorrectos, cabeceras de firma incompletas, o dispositivo no encontrado |
+| 401 | Credenciales de gateway no válidas, inactivas, timestamps expirados, nonces duplicados, o identificador MAC incorrecto |
 | 404 | Gateway no encontrado |
 
 ---

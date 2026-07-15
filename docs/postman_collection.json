@@ -29,6 +29,26 @@
             "key": "gatewayToken",
             "value": "",
             "description": "Token (API Key) obtenido de generarToken para un Gateway"
+        },
+        {
+            "key": "gatewaySignature",
+            "value": "",
+            "description": "Firma digital calculada para el Gateway (Modo Firma)"
+        },
+        {
+            "key": "gatewayTimestamp",
+            "value": "",
+            "description": "Timestamp en milisegundos (Modo Firma)"
+        },
+        {
+            "key": "gatewayNonce",
+            "value": "",
+            "description": "Nonce único para evitar replay attacks (Modo Firma)"
+        },
+        {
+            "key": "gatewayPrivateKeyPem",
+            "value": "",
+            "description": "Clave privada PEM (secp256r1) para autogenerar firmas en pre-request scripts"
         }
     ],
     "item": [
@@ -1685,22 +1705,58 @@
                 },
                 {
                     "name": "Registrar Lecturas (desde Gateway)",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Obtener timestamp actual en milisegundos",
+                                    "const timestamp = Date.now().toString();",
+                                    "pm.variables.set('gatewayTimestamp', timestamp);",
+                                    "",
+                                    "// Generar un nonce aleatorio de 16 caracteres hexadecimales",
+                                    "const nonce = [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');",
+                                    "pm.variables.set('gatewayNonce', nonce);",
+                                    "",
+                                    "// Si tienes configurada la clave privada en las variables de entorno,",
+                                    "// se firmará automáticamente el payload.",
+                                    "const privateKeyPem = pm.environment.get('gatewayPrivateKeyPem');",
+                                    "if (privateKeyPem) {",
+                                    "    const crypto = require('crypto');",
+                                    "    const body = pm.request.body.raw.trim();",
+                                    "    const msg = `${body}|${timestamp}|${nonce}`;",
+                                    "    const signer = crypto.createSign('SHA256');",
+                                    "    signer.update(msg);",
+                                    "    signer.end();",
+                                    "    const signature = signer.sign(privateKeyPem, 'base64');",
+                                    "    pm.variables.set('gatewaySignature', signature);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
                     "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{gatewayToken}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
                         "method": "POST",
                         "header": [
                             {
                                 "key": "Content-Type",
                                 "value": "application/json"
+                            },
+                            {
+                                "key": "X-Gateway-Signature",
+                                "value": "{{gatewaySignature}}",
+                                "description": "Firma digital del payload codificada en Base64"
+                            },
+                            {
+                                "key": "X-Gateway-Timestamp",
+                                "value": "{{gatewayTimestamp}}",
+                                "description": "Marca de tiempo UTC en milisegundos"
+                            },
+                            {
+                                "key": "X-Gateway-Nonce",
+                                "value": "{{gatewayNonce}}",
+                                "description": "Nonce criptográfico para prevenir Replay Attacks"
                             }
                         ],
                         "body": {
@@ -1722,7 +1778,7 @@
                                 "data"
                             ]
                         },
-                        "description": "Registra lecturas de múltiples sensores de un gateway. Crea registros en `Data` e `InfoEstatus` en una transacción atómica.\n\n### Body\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Identificador del gateway |\n| `data` | array | ✅ | Array de sensores |\n\n### Objeto sensor (cada elemento del array `data`)\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Nombre del dispositivo/sensor |\n| `signal.bateria` | number | ✅ | Nivel de batería |\n| `signal.rssi` | int | ✅ | Intensidad de señal |\n| `signal.snr` | int | ✅ | Relación señal/ruido |\n| `data.temperatura` | number | ✅ | Temperatura de la lectura |\n| `data.ambiente` | number | ✅ | Temperatura ambiente |\n\n### Respuesta exitosa (201)\n```json\n{\n  \"mensaje\": \"El registro se ha creado exitosamente\",\n  \"data\": [\n    {\n      \"data\": { \"id\": 1, \"temperatura\": -18.5, ... },\n      \"infoEstatus\": { \"id\": 1, \"bateria\": 85.5, ... }\n    }\n  ]\n}\n```\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 400 | Datos de validación incorrectos o dispositivo no encontrado |\n| 404 | Gateway no encontrado |"
+                        "description": "Registra lecturas de múltiples sensores de un gateway. Requiere autenticación por firma criptográfica (No Repudio).\n\n### Cabeceras requeridas\n* `X-Gateway-Signature`: Firma digital ECDSA secp256r1 del payload concatenado con timestamp y nonce.\n* `X-Gateway-Timestamp`: Unix epoch UTC en **milisegundos** (tolerancia +/- 5 min).\n* `X-Gateway-Nonce`: String único por mensaje.\n\n### Body\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Identificador único del gateway (MAC address) |\n| `data` | array | ✅ | Array de sensores |\n\n### Objeto sensor (cada elemento del array `data`)\n| Campo | Tipo | Req | Descripción |\n|-------|------|-----|-------------|\n| `identificador` | string | ✅ | Dirección MAC del sensor |\n| `signal.bateria` | number | ✅ | Nivel de batería |\n| `signal.rssi` | int | ✅ | Intensidad de señal |\n| `signal.snr` | int | ✅ | Relación señal/ruido |\n| `data.temperatura` | number | ✅ | Temperatura de la lectura |\n| `data.ambiente` | number | ✅ | Temperatura ambiente |\n\n### Respuesta exitosa (201)\n```json\n{\n  \"mensaje\": \"El registro se ha creado exitosamente\",\n  \"data\": [\n    {\n      \"data\": { \"id\": 1, \"temperatura\": -18.5, ... },\n      \"infoEstatus\": { \"id\": 1, \"bateria\": 85.5, ... }\n    }\n  ]\n}\n```\n\n### Errores\n| Código | Descripción |\n|--------|-------------|\n| 400 | Datos de validación incorrectos, cabeceras incompletas o dispositivo no encontrado |\n| 401 | Timestamps fuera de tolerancia, replay attack (nonce duplicado), firma incorrecta o gateway inactivo |\n| 404 | Gateway no encontrado |"
                     }
                 },
                 {
