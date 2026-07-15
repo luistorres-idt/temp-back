@@ -43,6 +43,7 @@ export class DataControllerV2 {
             const { guardados, noRegistrados } = await this.ingerirDatosSensor.execute({
                 identificadorGateway: identificador,
                 sensores,
+                firmaGateway: req.firmaGateway,
             });
             if (noRegistrados.length === 0) {
                 res.status(201).json({

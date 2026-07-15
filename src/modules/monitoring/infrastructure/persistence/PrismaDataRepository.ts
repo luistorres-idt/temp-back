@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { prisma } from "../../../../config/db.js";
 import { EntityNotFoundError } from "../../../../shared/domain/DomainError.js";
 import type {
@@ -58,13 +59,42 @@ export class PrismaDataRepository implements IDataRepository {
         rssi: number;
         snr: number;
         idGateway: number;
+        firmaGateway?: string;
     }): Promise<ResultadoIngesta> {
+        // 1. Obtener el último registro de telemetría de este dispositivo para extraer el prevHash
+        const ultimoRegistro = await this.db.data.findFirst({
+            where: { idDispositivo: params.idDispositivo },
+            orderBy: { creado: "desc" },
+            select: { hash: true },
+        });
+
+        const prevHash = ultimoRegistro?.hash || ""; // Cadena vacía para el primer bloque (bloque génesis)
+
+        // 2. Generar el timestamp exacto del registro para que coincida con el hash
+        const creado = new Date();
+        const creadoIso = creado.toISOString();
+        const humedadVal = params.humedad ?? null;
+        const humedadStr = humedadVal !== null ? humedadVal.toString() : "null";
+
+        // Formato del string para hashear: temperatura|ambiente|humedad|creadoIso|prevHash
+        const dataString = `${params.temperatura}|${params.ambiente}|${humedadStr}|${creadoIso}|${prevHash}`;
+
+        // 3. Calcular el hash SHA-256
+        const hash = crypto
+            .createHash("sha256")
+            .update(dataString)
+            .digest("hex");
+
         const dataRegistro = await this.db.data.create({
             data: {
                 temperatura: params.temperatura,
                 ambiente: params.ambiente,
-                humedad: params.humedad ?? null,
+                humedad: humedadVal,
                 idDispositivo: params.idDispositivo,
+                creado, // Forzar la fecha exacta que hasheamos
+                firmaGateway: params.firmaGateway ?? null,
+                hash,
+                prevHash,
             },
         });
 
@@ -75,6 +105,7 @@ export class PrismaDataRepository implements IDataRepository {
                 snr: params.snr,
                 idGateway: params.idGateway,
                 idDispositivo: params.idDispositivo,
+                creado,
             },
         });
 
