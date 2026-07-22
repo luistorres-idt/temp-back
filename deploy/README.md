@@ -5,7 +5,7 @@ Esta carpeta contiene la configuración necesaria para correr el proyecto en pro
 - **Frontend**: Servido por Nginx a partir de los estáticos compilados en el pipeline de CI/CD.
 - **Backend**: Node.js + Express + TypeScript + Prisma ORM corriendo en un contenedor Docker.
 - **Base de Datos**: AWS RDS (MySQL 8.0) administrado, garantizando backups y alta disponibilidad.
-- **Reverse Proxy**: Nginx — sirve el frontend directamente y redirige peticiones de `/api/` y WebSockets (`/socket.io/`) al backend de Node.
+- **Reverse Proxy**: Nginx — sirve el frontend directamente y redirige peticiones de `/api/` (incluyendo el canal de Server-Sent Events `/api/monitoring/telemetria/stream` para tiempo real) y sockets heredados al backend de Node.
 
 ---
 
@@ -15,7 +15,7 @@ Esta carpeta contiene la configuración necesaria para correr el proyecto en pro
 deploy/
 ├── docker-compose.prod.yml   # Orquesta Nginx y el backend en producción
 ├── nginx/
-│   └── nginx.conf            # Configuración de Nginx: estáticos + proxy al backend + WebSockets
+│   └── nginx.conf            # Configuración de Nginx: estáticos + proxy al backend + soporte SSE y WebSockets (legacy)
 ├── init-server.sh            # Script de setup inicial de la instancia EC2 (Docker + Swap de 2GB)
 └── README.md                 # Este archivo con instrucciones
 ```
@@ -41,8 +41,8 @@ flowchart TB
 
     Internet -->|"TCP :80 / :443"| Nginx
     Nginx -->|"GET /  →  sirve front/dist"| Nginx
-    Nginx -->|"/api/*  →  proxy"| Backend
-    Nginx -->|"/socket.io/*  →  WebSocket"| Backend
+    Nginx -->|"/api/*  →  proxy (incl. SSE)"| Backend
+    Nginx -->|"/socket.io/*  →  WebSocket (legacy)"| Backend
     Backend -->|"Prisma ORM (TCP 3306)"| RDS
 ```
 
@@ -59,7 +59,7 @@ Orquesta los dos servicios que corren en la instancia EC2 dentro de una red inte
 | Servicio | Imagen | Puerto externo | Descripción |
 |---|---|---|---|
 | `nginx` | `nginx:alpine` | `80:80`, `443:443` | Reverse proxy + sirve el frontend compilado en producción |
-| `backend-api` | Dockerfile local | solo interno `:3000` | API REST + WebSockets en Node.js |
+| `backend-api` | Dockerfile local | solo interno `:3000` | API REST + SSE y WebSockets (legacy) en Node.js |
 
 **Arranque y Salud:**
 1. El backend corre y expone su puerto `:3000` internamente.
@@ -67,13 +67,14 @@ Orquesta los dos servicios que corren en la instancia EC2 dentro de una red inte
 
 ### `nginx/nginx.conf`
 
-Divide el tráfico del servidor en tres bloques:
+Divide el tráfico del servidor en cuatro bloques principales:
 
 | Ruta | Comportamiento |
 |---|---|
 | `/` | Sirve archivos estáticos desde `../front/dist` (montado como volumen de solo lectura). `try_files` asegura que el router SPA funcione correctamente. |
+| `/api/monitoring/telemetria/stream` | Stream de Server-Sent Events (SSE). Desactiva el buffering de Nginx para flujo inmediato y configura tiempos de espera largos. |
 | `/api/` | Proxy hacia `http://backend-api:3000` preservando headers de IP real del cliente. |
-| `/socket.io/` | Proxy WebSocket con headers `Upgrade` + timeouts extendidos de 1 hora para conexiones continuas. |
+| `/socket.io/` | [Legacy] Proxy WebSocket con headers `Upgrade` + timeouts extendidos de 1 hora para compatibilidad. |
 
 ### `init-server.sh`
 

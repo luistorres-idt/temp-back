@@ -267,7 +267,7 @@ El endpoint `POST /api/data` **no sigue el CRUD estándar**. Recibe un payload e
 - **Query Params:**
   - `token` (Requerido): JWT access token de usuario.
 - **Descripción:** Establece un canal de eventos unidireccionales (Server-Sent Events) para recibir telemetría en vivo. Las sucursales a monitorear se filtran de forma automática y segura según el JWT del usuario.
-- **Detalles:** Ver la [Documentación de SSE](file:///C:/Users/idtTe/Desktop/proyectos/temp/backend/docs/SSE_DOCUMENTATION.md) para más detalles.
+- **Detalles:** Ver la [Documentación de SSE](SSE_DOCUMENTATION.md) para más detalles.
 
 ### 3. Calcular Resumen Diario de Sucursal (POST)
 - **Ruta:** `/reportes/sucursales/:id/calcular`

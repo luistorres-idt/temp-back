@@ -388,6 +388,69 @@
             ]
         },
         {
+            "name": "🔒 Permisos",
+            "description": "Gestión de permisos asignados a perfiles (roles) del sistema.",
+            "item": [
+                {
+                    "name": "Obtener Permisos de Perfil",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/permisos?idPerfil=2",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permisos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "idPerfil",
+                                    "value": "2",
+                                    "description": "ID del perfil (rol) del que se desean obtener los permisos"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene la lista de permisos (acciones permitidas) asociados a un perfil en particular.\n\n### Parámetros Query\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `idPerfil` | number | ❌ | ID del perfil a consultar |\n\n### Respuesta Exitosa (200 OK)\n```json\n{\n  \"mensaje\": \"Permisos cargados correctamente\",\n  \"data\": [\n    {\n      \"id\": 5,\n      \"idPerfil\": 2,\n      \"idAccion\": 10,\n      \"creado\": \"2026-06-01T08:00:00.000Z\",\n      \"estatus\": true\n    }\n  ]\n}\n```"
+                    }
+                },
+                {
+                    "name": "Guardar Permisos de Perfil",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"idPerfil\": 2,\n  \"idAcciones\": [10, 11, 12, 13]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/permisos",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permisos"
+                            ]
+                        },
+                        "description": "Actualiza la lista completa de acciones permitidas para un perfil específico.\n\n### Body (JSON)\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `idPerfil` | number | ✅ | ID del perfil a actualizar |\n| `idAcciones` | array (numbers) | ✅ | Arreglo con los IDs de las acciones que estarán permitidas para este perfil |\n\n### Respuesta Exitosa (200 OK)\n```json\n{\n  \"mensaje\": \"Permisos actualizados correctamente\"\n}\n```"
+                    }
+                }
+            ]
+        },
+        {
             "name": "📦 Módulos",
             "description": "CRUD de módulos del sistema (Usuarios, Reportes, etc.).\n\nResponse: `{ id, nombre, estatus, creado }`",
             "item": [
@@ -2023,6 +2086,41 @@
                             ]
                         },
                         "description": "Genera y descarga un libro de Excel (.xlsx) conteniendo el histórico consolidado de la sucursal (hoja \"Resumen\") y las lecturas minuto a minuto del día especificado (hoja \"Datos\").\n\n### Parámetros Query\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `fecha` | string | ✅ | Día de desglose detallado (YYYY-MM-DD) |\n| `fechaInicio` | string | ❌ | Límite inferior de resumen (default: `fecha`) |\n| `fechaFin` | string | ❌ | Límite superior de resumen (default: `fecha`) |\n\n### Respuesta\nRetorna un archivo binario `.xlsx` con cabecera `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`."
+                    }
+                },
+                {
+                    "name": "Obtener Insights de Sucursal",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/reportes/sucursales/1/insights",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "reportes",
+                                "sucursales",
+                                "1",
+                                "insights"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fechaInicio",
+                                    "value": "2026-06-01",
+                                    "disabled": true,
+                                    "description": "Fecha de inicio del rango (opcional, YYYY-MM-DD)"
+                                },
+                                {
+                                    "key": "fechaFin",
+                                    "value": "2026-06-02",
+                                    "disabled": true,
+                                    "description": "Fecha de fin del rango (opcional, YYYY-MM-DD)"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene métricas resumidas y de diagnóstico (temperatura promedio, máxima, mínima, conteo de excursiones, congelador más inestable y sensor con batería más baja) para la sucursal indicada en un rango de fechas.\n\n### Parámetros Query\n| Campo | Tipo | Requerido | Descripción |\n|-------|------|-----------|-------------|\n| `fechaInicio` | string | ❌ | Fecha de inicio del rango (default: primer día del mes actual) |\n| `fechaFin` | string | ❌ | Fecha de fin del rango (default: hoy) |\n\n### Respuesta Exitosa (200 OK)\n```json\n{\n  \"data\": {\n    \"tempMax\": -12.5,\n    \"tempMin\": -22.3,\n    \"tempMedia\": -17.8,\n    \"totalLecturas\": 5420,\n    \"totalExcursiones\": 120,\n    \"porcentajeExcursiones\": 2.21,\n    \"congeladorMasInestable\": {\n      \"id\": 5,\n      \"nombre\": \"Congelador 5\",\n      \"temperaturaObjetivo\": -18,\n      \"excursiones\": 98,\n      \"totalLecturas\": 1084,\n      \"porcentajeInestable\": 9.04\n    },\n    \"bateriaMasBaja\": {\n      \"bateria\": 15.5,\n      \"dispositivoNombre\": \"Sensor principal\",\n      \"congeladorNombre\": \"Congelador 5\"\n    }\n  }\n}\n```"
                     }
                 }
             ]
