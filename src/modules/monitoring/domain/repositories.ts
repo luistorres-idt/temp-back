@@ -24,6 +24,7 @@ export interface DatosSensor {
 export interface ComandoIngesta {
     identificadorGateway: string;
     sensores: DatosSensor[];
+    firmaGateway?: string;
 }
 
 /**
@@ -80,6 +81,7 @@ export interface IDataRepository {
         rssi: number;
         snr: number;
         idGateway: number;
+        firmaGateway?: string;
     }): Promise<ResultadoIngesta>;
 
     /**

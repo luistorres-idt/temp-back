@@ -144,9 +144,10 @@ Unidad física de congelación/refrigeración que requiere monitoreo térmico co
 #### Gateway
 Dispositivo concentrador (ej. LoRaWAN) que recibe las señales inalámbricas de los sensores instalados en la sección.
 * **id** (Int, PK, Autoincrement): Identificador de base de datos.
-* **identificador** (String, Unique): ID de hardware único del gateway.
+* **identificador** (String, Unique): ID de hardware único del gateway (MAC address).
 * **nombre** (String): Nombre asignado al gateway.
-* **tokenHash** (String, Unique, Opcional): Hash de la API Key utilizada para autenticar las peticiones de envío de datos.
+* **tokenHash** (String, Unique, Opcional): Hash SHA-256 de la API Key utilizada para la autenticación legacy.
+* **publicKeyPem** (String, Opcional): Clave pública PEM (ECDSA secp256r1) para la verificación de firmas digitales de no repudio.
 * **idSeccion** (Int, FK): Sección en la que opera.
 * **creado** (DateTime): Fecha de creación.
 * **actualizado** (DateTime): Fecha de modificación.
@@ -173,6 +174,9 @@ Histórico de lecturas de telemetría emitidas por los sensores.
 * **creado** (DateTime): Fecha y hora del registro de telemetría.
 * **actualizado** (DateTime): Fecha de modificación.
 * **estatus** (Boolean, default: true): Estado lógico.
+* **firmaGateway** (String, Opcional): Firma criptográfica del gateway (en formato Base64) obtenida en la autenticación por firma digital.
+* **hash** (String, Opcional): Hash SHA-256 generado al concatenar temperatura, ambiente, humedad, fecha e ISO del timestamp de creación y el `prevHash` del registro anterior.
+* **prevHash** (String, Opcional): Hash del registro de telemetría anterior correspondiente a este mismo dispositivo para asegurar la inmutabilidad de la base de datos (encadenamiento/hash chain).
 * *Índices*: Posee un índice compuesto `[idDispositivo, creado]` para acelerar las consultas temporales por sensor.
 
 #### InfoEstatus

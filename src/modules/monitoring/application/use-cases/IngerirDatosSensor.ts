@@ -70,7 +70,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         const procesados = await this.dataRepository.ejecutarEnTransaccion(async (txRepo) => {
             return Promise.all(
                 sensoresFiltrados.map((sensor) =>
-                    this.procesarSensor(txRepo, sensor, gateway.id, ambienteComun)
+                    this.procesarSensor(txRepo, sensor, gateway.id, ambienteComun, comando.firmaGateway)
                 )
             );
         });
@@ -102,6 +102,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
         sensor: DatosSensor,
         idGateway: number,
         ambienteComun: number,
+        firmaGateway?: string,
     ): Promise<ResultadoProcesamiento> {
         const dispositivo = await repo.buscarDispositivoPorIdentificadorYGateway(
             sensor.identificador,
@@ -123,6 +124,7 @@ export class IngerirDatosSensor implements UseCase<ComandoIngesta, IngestaRespon
             rssi: sensor.signal.rssi,
             snr: sensor.signal.snr ?? 0,
             idGateway,
+            firmaGateway,
         });
 
         const evento = telemetriaRecibida({

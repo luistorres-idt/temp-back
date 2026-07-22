@@ -31,6 +31,8 @@ services:
       - "3000"
     env_file:
       - ../.env
+    depends_on:
+      - redis
     healthcheck:
       # wget porque node:22-alpine no incluye curl
       # /healthy es el endpoint real definido en app.ts
@@ -39,6 +41,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - temp-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: temp-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
     networks:
       - temp-net
 

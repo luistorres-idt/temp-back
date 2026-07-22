@@ -11,6 +11,8 @@ export interface GatewayResponse {
     identificador: string;
     nombre: string;
     estatus: boolean;
+    tokenHash?: string | null;
+    publicKeyPem?: string | null;
     creado: Date;
     seccion: {
         id: number;
